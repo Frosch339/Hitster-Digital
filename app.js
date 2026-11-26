@@ -6,16 +6,14 @@
 const SUPABASE_URL = "https://emxuwtoysqizvazvylyb.supabase.co";
 const SUPABASE_KEY = "sb_publishable__9lNBaOjKcmpIPbwX9Kr9Q_WNeyoWGo";
 
-const db = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
-
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const app = document.querySelector("#app");
 
 let currentChannel = null;
 let currentLobby = null;
 let currentPlayer = null;
+let currentView = "home";
+let selectedCard = false;
 
 
 // ==========================================
@@ -23,9 +21,7 @@ let currentPlayer = null;
 // ==========================================
 
 function createId() {
-  if (crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
+  if (crypto.randomUUID) return crypto.randomUUID();
 
   return "player-" + Date.now() + "-" +
     Math.random().toString(16).slice(2);
@@ -47,7 +43,7 @@ function createGameCode() {
 }
 
 function escapeHtml(text) {
-  return String(text).replace(/[&<>"']/g, character => {
+  return String(text ?? "").replace(/[&<>"']/g, character => {
     const entities = {
       "&": "&amp;",
       "<": "&lt;",
@@ -60,10 +56,97 @@ function escapeHtml(text) {
   });
 }
 
+function shuffleArray(array) {
+  const result = [...array];
+
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
+}
+
 function stopRealtime() {
   if (currentChannel) {
     db.removeChannel(currentChannel);
     currentChannel = null;
+  }
+}
+
+async function loadLobby(code) {
+  const { data, error } = await db
+    .from("game_lobbies")
+    .select("*")
+    .eq("code", code)
+    .single();
+
+  if (error) throw error;
+
+  currentLobby = data;
+  return data;
+}
+
+function subscribeToLobby(code) {
+  stopRealtime();
+
+  currentChannel = db
+    .channel("game-" + code + "-" + getPlayerId())
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "game_lobbies",
+        filter: "code=eq." + code
+      },
+      payload => {
+        currentLobby = payload.new;
+        handleLobbyUpdate(code, payload.new);
+      }
+    )
+    .subscribe();
+}
+
+function handleLobbyUpdate(code, lobby) {
+  if (lobby.status === "started" || lobby.status === "finished") {
+    if (currentPlayer) {
+      if (currentView !== "phone-game") {
+        showPhoneGameScreen(code);
+      } else {
+        renderPhoneGame();
+      }
+    } else {
+      if (currentView !== "tablet-game") {
+        showTabletGameScreen(code);
+      } else {
+        renderTabletGame();
+      }
+    }
+
+    return;
+  }
+
+  if (currentView === "host-lobby") {
+    renderHostLobby(lobby.players || [], lobby.status);
+  }
+
+  if (currentView === "phone-lobby" && currentPlayer) {
+    const updatedPlayer = (lobby.players || []).find(
+      player => player.id === currentPlayer.id
+    );
+
+    if (!updatedPlayer) {
+      showRemovedPage();
+      return;
+    }
+
+    const oldIsHost = currentPlayer.isHost;
+    currentPlayer = updatedPlayer;
+
+    if (oldIsHost !== updatedPlayer.isHost) {
+      showJoinedPage(code);
+    }
   }
 }
 
@@ -72,8 +155,10 @@ function showStartseite() {
 
   currentPlayer = null;
   currentLobby = null;
+  currentView = "home";
 
   app.classList.remove("lobby-screen");
+  app.classList.remove("game-screen");
 
   app.innerHTML = `
     <div class="logo">♫</div>
@@ -98,7 +183,7 @@ function showStartseite() {
 
 
 // ==========================================
-// SPIEL ERSTELLEN – TABLET
+// SPIEL ERSTELLEN
 // ==========================================
 
 async function createGame() {
@@ -114,7 +199,7 @@ async function createGame() {
     const { data, error } = await db
       .from("game_lobbies")
       .insert({
-        code: code,
+        code,
         players: []
       })
       .select()
@@ -133,30 +218,32 @@ async function createGame() {
 
   } catch (error) {
     console.error(error);
-
-    app.innerHTML = `
-      <h1>Fehler</h1>
-      <p class="beschreibung">
-        Das Spiel konnte nicht erstellt werden.
-      </p>
-      <p class="hinweis">${escapeHtml(error.message)}</p>
-      <button id="back-home">Zurück</button>
-    `;
-
-    document.querySelector("#back-home")
-      .addEventListener("click", showStartseite);
+    showError(error.message);
   }
+}
+
+function showError(message) {
+  app.innerHTML = `
+    <h1>Fehler</h1>
+    <p class="beschreibung">${escapeHtml(message)}</p>
+    <button id="back-home">Zurück</button>
+  `;
+
+  document.querySelector("#back-home")
+    .addEventListener("click", showStartseite);
 }
 
 
 // ==========================================
-// LOBBY AUF DEM TABLET
+// TABLET – LOBBY
 // ==========================================
 
 async function showHostLobby(code) {
   stopRealtime();
+  currentView = "host-lobby";
 
   app.classList.add("lobby-screen");
+  app.classList.remove("game-screen");
 
   app.innerHTML = `
     <div class="lobby-layout">
@@ -203,67 +290,28 @@ async function showHostLobby(code) {
     correctLevel: QRCode.CorrectLevel.H
   });
 
-  const { data, error } = await db
-    .from("game_lobbies")
-    .select("*")
-    .eq("code", code)
-    .single();
+  try {
+    const lobby = await loadLobby(code);
 
-  if (error) {
+    if (lobby.status === "started" || lobby.status === "finished") {
+      showTabletGameScreen(code);
+      return;
+    }
+
+    renderHostLobby(lobby.players || [], lobby.status);
+
+    subscribeToLobby(code);
+  } catch (error) {
     console.error(error);
-    return;
+    showError(error.message);
   }
-
-  currentLobby = data;
-  renderHostLobby(data.players || [], data.status || "waiting");
-
-  currentChannel = db
-    .channel("tablet-lobby-" + code)
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "game_lobbies",
-        filter: "code=eq." + code
-      },
-      payload => {
-        currentLobby = payload.new;
-
-        renderHostLobby(
-          payload.new.players || [],
-          payload.new.status || "waiting"
-        );
-      }
-    )
-    .subscribe();
 }
-
-
-// ==========================================
-// SPIELERLISTE AUF DEM TABLET
-// ==========================================
 
 function renderHostLobby(players, status) {
   const list = document.querySelector("#player-list");
   const statusText = document.querySelector("#host-status");
 
   if (!list) return;
-
-  if (status === "started") {
-    list.innerHTML = `
-      <div class="waiting-box">
-        <h2>Das Spiel beginnt!</h2>
-        <p>Die Spieler sind bereit.</p>
-      </div>
-    `;
-
-    if (statusText) {
-      statusText.textContent = "Spiel gestartet";
-    }
-
-    return;
-  }
 
   if (!players.length) {
     list.innerHTML = `
@@ -291,13 +339,15 @@ function renderHostLobby(players, status) {
 
 
 // ==========================================
-// SMARTPHONE: BEITRITTSSEITE
+// SMARTPHONE – BEITRITT
 // ==========================================
 
 function showJoinPage(code) {
   stopRealtime();
+  currentView = "join-page";
 
   app.classList.remove("lobby-screen");
+  app.classList.remove("game-screen");
 
   app.innerHTML = `
     <div class="logo">♫</div>
@@ -331,11 +381,6 @@ function showJoinPage(code) {
     });
 }
 
-
-// ==========================================
-// SPIELER BEITRETEN
-// ==========================================
-
 async function joinGame(code) {
   const nameInput = document.querySelector("#player-name");
   const name = nameInput.value.trim();
@@ -352,17 +397,9 @@ async function joinGame(code) {
   button.textContent = "Beitritt läuft ...";
 
   try {
-    const { data: lobby, error } = await db
-      .from("game_lobbies")
-      .select("*")
-      .eq("code", code)
-      .single();
+    const lobby = await loadLobby(code);
 
-    if (error || !lobby) {
-      throw new Error("Diese Lobby wurde nicht gefunden.");
-    }
-
-    if (lobby.status === "started") {
+    if (lobby.status !== "waiting") {
       throw new Error("Das Spiel hat bereits begonnen.");
     }
 
@@ -375,27 +412,26 @@ async function joinGame(code) {
 
     if (existingPlayer) {
       currentPlayer = existingPlayer;
-      currentLobby = lobby;
       showJoinedPage(code);
       return;
     }
 
     const newPlayer = {
       id: playerId,
-      name: name,
+      name,
       isHost: players.length === 0
     };
 
     players.push(newPlayer);
 
-    const { data: updatedLobby, error: updateError } = await db
+    const { data: updatedLobby, error } = await db
       .from("game_lobbies")
-      .update({ players: players })
+      .update({ players })
       .eq("id", lobby.id)
       .select()
       .single();
 
-    if (updateError) throw updateError;
+    if (error) throw error;
 
     currentPlayer = newPlayer;
     currentLobby = updatedLobby;
@@ -415,13 +451,15 @@ async function joinGame(code) {
 
 
 // ==========================================
-// SMARTPHONE: LOBBY-ANSICHT
+// SMARTPHONE – LOBBY
 // ==========================================
 
 function showJoinedPage(code) {
   stopRealtime();
+  currentView = "phone-lobby";
 
   app.classList.remove("lobby-screen");
+  app.classList.remove("game-screen");
 
   const isHost = currentPlayer && currentPlayer.isHost;
 
@@ -460,53 +498,12 @@ function showJoinedPage(code) {
   document.querySelector("#leave-game")
     .addEventListener("click", () => leaveLobby(code));
 
-  // Änderungen der Lobby auf diesem Smartphone empfangen
-  currentChannel = db
-    .channel("phone-lobby-" + code + "-" + currentPlayer.id)
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "game_lobbies",
-        filter: "code=eq." + code
-      },
-      payload => {
-        currentLobby = payload.new;
-
-        const players = payload.new.players || [];
-
-        const updatedPlayer = players.find(
-          player => player.id === currentPlayer.id
-        );
-
-        // Spieler wurde aus der Lobby entfernt
-        if (!updatedPlayer) {
-          showRemovedPage();
-          return;
-        }
-
-        // Spielleiterstatus aktualisieren
-        currentPlayer = updatedPlayer;
-
-        // Alle Smartphones wechseln gleichzeitig zum Spiel
-        if (payload.new.status === "started") {
-          showGameScreen(code);
-          return;
-        }
-
-        // Bei einem Spielleiterwechsel Ansicht aktualisieren
-        if (updatedPlayer.isHost !== isHost) {
-          showJoinedPage(code);
-        }
-      }
-    )
-    .subscribe();
+  subscribeToLobby(code);
 }
 
 
 // ==========================================
-// SPIELSTART AUF DEM SMARTPHONE
+// SPIELSTART – KARTENSTAPEL ERSTELLEN
 // ==========================================
 
 async function startGame(code) {
@@ -519,14 +516,56 @@ async function startGame(code) {
     button.textContent = "Spiel startet ...";
   }
 
-  const { error } = await db
-    .from("game_lobbies")
-    .update({ status: "started" })
-    .eq("code", code);
+  try {
+    const lobby = await loadLobby(code);
+    const players = lobby.players || [];
 
-  if (error) {
+    if (!players.length) {
+      throw new Error("Es sind keine Spieler in der Lobby.");
+    }
+
+    if (!Array.isArray(window.songs) || window.songs.length < players.length + 1) {
+      throw new Error("Die Songliste konnte nicht richtig geladen werden.");
+    }
+
+    // Songs mischen
+    const deck = shuffleArray(window.songs);
+
+    // Jeder Spieler erhält eine zufällige Startkarte
+    const timelines = {};
+
+    players.forEach(player => {
+      timelines[player.id] = [deck.pop()];
+    });
+
+    // Erste Karte für den ersten Spielzug ziehen
+    const firstCard = deck.pop();
+
+    const currentCard = {
+      song: firstCard,
+      player_id: players[0].id,
+      position: null,
+      revealed: false,
+      correct: null
+    };
+
+    const { error } = await db
+      .from("game_lobbies")
+      .update({
+        status: "started",
+        current_player_index: 0,
+        timelines,
+        current_card: currentCard,
+        game_deck: deck,
+        round_number: 1
+      })
+      .eq("code", code);
+
+    if (error) throw error;
+
+  } catch (error) {
     console.error(error);
-    alert("Das Spiel konnte nicht gestartet werden.");
+    alert("Das Spiel konnte nicht gestartet werden: " + error.message);
 
     if (button) {
       button.disabled = false;
@@ -537,83 +576,592 @@ async function startGame(code) {
 
 
 // ==========================================
-// SPIELANSICHT – VORLÄUFIG
+// TABLET – SPIELANSICHT
 // ==========================================
 
-function showGameScreen(code) {
+async function showTabletGameScreen(code) {
   stopRealtime();
+  currentView = "tablet-game";
+  currentPlayer = null;
 
   app.classList.remove("lobby-screen");
+  app.classList.add("game-screen");
+
+  try {
+    await loadLobby(code);
+    renderTabletGame();
+    subscribeToLobby(code);
+  } catch (error) {
+    console.error(error);
+    showError(error.message);
+  }
+}
+
+function renderTabletGame() {
+  const lobby = currentLobby;
+  if (!lobby) return;
+
+  const players = lobby.players || [];
+  const timelines = lobby.timelines || {};
+  const playerIndex = lobby.current_player_index || 0;
+  const activePlayer = players[playerIndex];
+  const currentCard = lobby.current_card;
+
+  if (lobby.status === "finished") {
+    app.innerHTML = `
+      <div class="game-board">
+        <p class="untertitel">HITSTER DIGITAL</p>
+        <h1>Spiel beendet!</h1>
+        <div class="waiting-box">
+          <h2>Alle Karten wurden gespielt.</h2>
+          <p>Vielen Dank fürs Mitspielen!</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (!activePlayer) return;
+
+  const timeline = timelines[activePlayer.id] || [];
+
+  let resultHtml = "";
+
+  if (currentCard && currentCard.revealed) {
+    resultHtml = `
+      <div class="reveal-panel ${currentCard.correct ? "correct" : "incorrect"}">
+        <p class="untertitel">AUFGELÖST</p>
+        <h2>${escapeHtml(currentCard.song.title)}</h2>
+        <p>${escapeHtml(currentCard.song.artist)}</p>
+        <div class="reveal-year">${currentCard.song.year}</div>
+        <strong>
+          ${currentCard.correct ? "Richtig eingeordnet!" : "Leider falsch eingeordnet"}
+        </strong>
+      </div>
+    `;
+  } else {
+    resultHtml = `
+      <div class="tablet-current-card">
+        <div class="record-icon">♫</div>
+        <h2>Neue Karte</h2>
+        <p>Die Karte wird gerade eingeordnet.</p>
+        ${
+          currentCard && currentCard.position !== null
+            ? '<span class="placed-label">Position ausgewählt</span>'
+            : '<span class="placed-label">Warte auf die Platzierung ...</span>'
+        }
+      </div>
+    `;
+  }
 
   app.innerHTML = `
-    <div class="logo">♫</div>
-    <p class="untertitel">HITSTER DIGITAL</p>
-    <h1>Das Spiel beginnt!</h1>
+    <div class="game-board tablet-board">
+      <header class="game-header">
+        <div>
+          <p class="untertitel">HITSTER DIGITAL</p>
+          <h1>Spielrunde</h1>
+        </div>
+        <div class="round-label">RUNDE ${lobby.round_number || 1}</div>
+      </header>
 
-    <div class="waiting-box">
-      <h2>Hallo, ${escapeHtml(currentPlayer.name)}!</h2>
-      <p>
-        Du bist jetzt im Spiel.
-        Als Nächstes bauen wir die Spielzüge und die Zeitleiste ein.
-      </p>
+      <section class="active-player-panel">
+        <p class="untertitel">JETZT AM ZUG</p>
+        <h2>${escapeHtml(activePlayer.name)}</h2>
+        <p>Spieler ${playerIndex + 1} von ${players.length}</p>
+      </section>
+
+      ${resultHtml}
+
+      <section class="tablet-timeline-section">
+        <div class="section-heading">
+          <h2>Zeitleiste von ${escapeHtml(activePlayer.name)}</h2>
+          <span>${timeline.length} Karten</span>
+        </div>
+
+        <div class="timeline-horizontal">
+          ${
+            timeline.map((song, index) => `
+              <div class="timeline-card">
+                <span class="timeline-card-number">${index + 1}</span>
+                <strong>${song.year}</strong>
+                <span>${escapeHtml(song.title)}</span>
+              </div>
+            `).join("")
+          }
+        </div>
+      </section>
+
+      <section class="tablet-player-list">
+        ${players.map((player, index) => `
+          <div class="tablet-player ${index === playerIndex ? "active" : ""}">
+            <span>${escapeHtml(player.name)}</span>
+            <strong>${(timelines[player.id] || []).length} Karten</strong>
+          </div>
+        `).join("")}
+      </section>
     </div>
-
-    <p class="hinweis">Spielcode: ${escapeHtml(code)}</p>
   `;
 }
 
 
 // ==========================================
-// SPIELER VERLÄSST DIE LOBBY
+// SMARTPHONE – SPIELANSICHT
+// ==========================================
+
+async function showPhoneGameScreen(code) {
+  stopRealtime();
+  currentView = "phone-game";
+  selectedCard = false;
+
+  app.classList.remove("lobby-screen");
+  app.classList.add("game-screen");
+
+  try {
+    await loadLobby(code);
+    renderPhoneGame();
+    subscribeToLobby(code);
+  } catch (error) {
+    console.error(error);
+    showError(error.message);
+  }
+}
+
+function renderPhoneGame() {
+  const lobby = currentLobby;
+  if (!lobby || !currentPlayer) return;
+
+  const players = lobby.players || [];
+  const timelines = lobby.timelines || {};
+  const playerIndex = lobby.current_player_index || 0;
+  const activePlayer = players[playerIndex];
+  const isMyTurn = activePlayer && activePlayer.id === currentPlayer.id;
+  const timeline = timelines[currentPlayer.id] || [];
+  const currentCard = lobby.current_card;
+
+  if (lobby.status === "finished") {
+    app.innerHTML = `
+      <div class="phone-game">
+        <div class="logo">♫</div>
+        <p class="untertitel">HITSTER DIGITAL</p>
+        <h1>Spiel beendet!</h1>
+        <p class="beschreibung">Vielen Dank fürs Mitspielen!</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (!activePlayer) return;
+
+  let turnContent = "";
+
+  if (currentCard && currentCard.revealed) {
+    turnContent = `
+      <div class="reveal-panel ${currentCard.correct ? "correct" : "incorrect"}">
+        <p class="untertitel">AUFGELÖST</p>
+        <h2>${escapeHtml(currentCard.song.title)}</h2>
+        <p>${escapeHtml(currentCard.song.artist)}</p>
+        <div class="reveal-year">${currentCard.song.year}</div>
+        <strong>
+          ${currentCard.correct ? "Richtig eingeordnet!" : "Leider falsch eingeordnet"}
+        </strong>
+      </div>
+
+      ${
+        currentPlayer.isHost
+          ? '<button id="next-turn">Nächster Spieler</button>'
+          : '<p class="waiting-note">Warte, bis der Spielleiter den nächsten Zug startet.</p>'
+      }
+    `;
+  } else if (isMyTurn) {
+    turnContent = `
+      <div class="phone-turn-panel">
+        <p class="untertitel">DEIN SPIELZUG</p>
+        <h2>Neue Karte</h2>
+        <p>Ordne die verdeckte Karte an der passenden Stelle ein.</p>
+
+        <div
+          id="new-card"
+          class="new-game-card ${selectedCard ? "selected" : ""}"
+          draggable="true"
+        >
+          <div class="record-icon">♫</div>
+          <strong>Neue Karte</strong>
+          <span>Antippen und Position auswählen</span>
+        </div>
+
+        <p class="placement-help">
+          ${
+            currentCard && currentCard.position !== null
+              ? "Position ausgewählt. Du kannst jetzt auflösen."
+              : "Ziehe die Karte an die richtige Stelle oder tippe zuerst die Karte und danach auf eine Position."
+          }
+        </p>
+
+        <button id="resolve-card"
+          ${!currentCard || currentCard.position === null ? "disabled" : ""}>
+          Auflösen
+        </button>
+      </div>
+    `;
+  } else {
+    turnContent = `
+      <div class="waiting-box">
+        <h2>${escapeHtml(activePlayer.name)} ist am Zug</h2>
+        <p>Du bist als Nächstes dran. Deine Zeitleiste bleibt hier sichtbar.</p>
+      </div>
+    `;
+  }
+
+  app.innerHTML = `
+    <div class="phone-game">
+      <header class="phone-game-header">
+        <div>
+          <p class="untertitel">HITSTER DIGITAL</p>
+          <h1>Deine Zeitleiste</h1>
+        </div>
+        <div class="round-label">RUNDE ${lobby.round_number || 1}</div>
+      </header>
+
+      <div class="phone-turn-status ${isMyTurn ? "my-turn" : ""}">
+        ${
+          isMyTurn
+            ? "Du bist jetzt an der Reihe!"
+            : "Am Zug: " + escapeHtml(activePlayer.name)
+        }
+      </div>
+
+      ${turnContent}
+
+      <section class="phone-timeline-section">
+        <div class="section-heading">
+          <h2>Deine Karten</h2>
+          <span>${timeline.length} Karten</span>
+        </div>
+
+        <div class="timeline-vertical">
+          ${
+            isMyTurn && currentCard && !currentCard.revealed
+              ? timeline.map((song, index) => `
+                  ${renderTimelineSlot(index, currentCard.position, selectedCard)}
+                  ${renderTimelineCard(song, index)}
+                `).join("") +
+                renderTimelineSlot(timeline.length, currentCard.position, selectedCard)
+              : timeline.map((song, index) =>
+                  renderTimelineCard(song, index)
+                ).join("")
+          }
+        </div>
+      </section>
+    </div>
+  `;
+
+  attachPhoneGameEvents(lobby);
+}
+
+function renderTimelineCard(song, index) {
+  return `
+    <div class="phone-timeline-card">
+      <span class="timeline-card-number">${index + 1}</span>
+      <div>
+        <strong>${song.year}</strong>
+        <span>${escapeHtml(song.title)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderTimelineSlot(position, selectedPosition, selected) {
+  const isPlaced = selectedPosition === position;
+
+  return `
+    <button
+      class="timeline-slot ${isPlaced ? "placed" : ""} ${selected ? "slot-ready" : ""}"
+      data-position="${position}"
+      type="button"
+    >
+      ${
+        isPlaced
+          ? "Karte hier eingeordnet"
+          : selected
+            ? "Hier ablegen"
+            : "+"
+      }
+    </button>
+  `;
+}
+
+
+// ==========================================
+// SMARTPHONE – KARTE VERSCHIEBEN
+// ==========================================
+
+function attachPhoneGameEvents(lobby) {
+  const cardElement = document.querySelector("#new-card");
+
+  if (cardElement) {
+    cardElement.addEventListener("click", () => {
+      selectedCard = !selectedCard;
+      renderPhoneGame();
+    });
+
+    cardElement.addEventListener("dragstart", event => {
+      event.dataTransfer.setData("text/plain", "new-card");
+      event.dataTransfer.effectAllowed = "move";
+      selectedCard = true;
+    });
+  }
+
+  document.querySelectorAll(".timeline-slot").forEach(slot => {
+    slot.addEventListener("click", () => {
+      if (selectedCard) {
+        placeCardAt(Number(slot.dataset.position));
+      }
+    });
+
+    slot.addEventListener("dragover", event => {
+      event.preventDefault();
+      slot.classList.add("drag-over");
+    });
+
+    slot.addEventListener("dragleave", () => {
+      slot.classList.remove("drag-over");
+    });
+
+    slot.addEventListener("drop", event => {
+      event.preventDefault();
+      slot.classList.remove("drag-over");
+      placeCardAt(Number(slot.dataset.position));
+    });
+  });
+
+  const resolveButton = document.querySelector("#resolve-card");
+
+  if (resolveButton) {
+    resolveButton.addEventListener("click", resolveCard);
+  }
+
+  const nextButton = document.querySelector("#next-turn");
+
+  if (nextButton) {
+    nextButton.addEventListener("click", nextTurn);
+  }
+}
+
+async function placeCardAt(position) {
+  if (!currentLobby || !currentPlayer) return;
+
+  const lobby = currentLobby;
+  const players = lobby.players || [];
+  const activePlayer = players[lobby.current_player_index || 0];
+
+  if (!activePlayer || activePlayer.id !== currentPlayer.id) return;
+
+  const card = lobby.current_card;
+
+  if (!card || card.revealed) return;
+
+  const updatedCard = {
+    ...card,
+    position
+  };
+
+  const { error } = await db
+    .from("game_lobbies")
+    .update({ current_card: updatedCard })
+    .eq("code", lobby.code);
+
+  if (error) {
+    console.error(error);
+    alert("Die Position konnte nicht gespeichert werden.");
+    return;
+  }
+
+  selectedCard = false;
+}
+
+
+// ==========================================
+// KARTE AUFLÖSEN UND PRÜFEN
+// ==========================================
+
+async function resolveCard() {
+  if (!currentPlayer || !currentLobby) return;
+
+  try {
+    const lobby = await loadLobby(currentLobby.code);
+    const players = lobby.players || [];
+    const playerIndex = lobby.current_player_index || 0;
+    const activePlayer = players[playerIndex];
+    const card = lobby.current_card;
+
+    if (!activePlayer || activePlayer.id !== currentPlayer.id) {
+      return;
+    }
+
+    if (!card || card.position === null || card.revealed) {
+      return;
+    }
+
+    const timelines = { ...(lobby.timelines || {}) };
+    const timeline = [...(timelines[currentPlayer.id] || [])];
+    const position = card.position;
+    const year = Number(card.song.year);
+
+    const previousSong = position > 0 ? timeline[position - 1] : null;
+    const nextSong = position < timeline.length ? timeline[position] : null;
+
+    const afterPrevious = !previousSong || year >= Number(previousSong.year);
+    const beforeNext = !nextSong || year <= Number(nextSong.year);
+
+    const correct = afterPrevious && beforeNext;
+
+    if (correct) {
+      timeline.splice(position, 0, card.song);
+      timelines[currentPlayer.id] = timeline;
+    }
+
+    const updatedCard = {
+      ...card,
+      revealed: true,
+      correct
+    };
+
+    const { error } = await db
+      .from("game_lobbies")
+      .update({
+        timelines,
+        current_card: updatedCard
+      })
+      .eq("code", lobby.code);
+
+    if (error) throw error;
+
+  } catch (error) {
+    console.error(error);
+    alert("Die Karte konnte nicht aufgelöst werden: " + error.message);
+  }
+}
+
+
+// ==========================================
+// NÄCHSTER SPIELER
+// ==========================================
+
+async function nextTurn() {
+  if (!currentPlayer || !currentPlayer.isHost || !currentLobby) return;
+
+  const button = document.querySelector("#next-turn");
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Nächster Zug ...";
+  }
+
+  try {
+    const lobby = await loadLobby(currentLobby.code);
+    const players = lobby.players || [];
+    const deck = [...(lobby.game_deck || [])];
+
+    if (!lobby.current_card || !lobby.current_card.revealed) {
+      throw new Error("Die aktuelle Karte muss zuerst aufgelöst werden.");
+    }
+
+    if (!deck.length) {
+      const { error } = await db
+        .from("game_lobbies")
+        .update({
+          status: "finished",
+          current_card: null
+        })
+        .eq("code", lobby.code);
+
+      if (error) throw error;
+      return;
+    }
+
+    const oldIndex = lobby.current_player_index || 0;
+    const nextIndex = (oldIndex + 1) % players.length;
+    const newRound = nextIndex === 0
+      ? (lobby.round_number || 1) + 1
+      : (lobby.round_number || 1);
+
+    const nextCard = deck.pop();
+
+    const currentCard = {
+      song: nextCard,
+      player_id: players[nextIndex].id,
+      position: null,
+      revealed: false,
+      correct: null
+    };
+
+    const { error } = await db
+      .from("game_lobbies")
+      .update({
+        current_player_index: nextIndex,
+        round_number: newRound,
+        game_deck: deck,
+        current_card: currentCard
+      })
+      .eq("code", lobby.code);
+
+    if (error) throw error;
+
+  } catch (error) {
+    console.error(error);
+    alert("Der nächste Spielzug konnte nicht gestartet werden: " + error.message);
+
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Nächster Spieler";
+    }
+  }
+}
+
+
+// ==========================================
+// LOBBY VERLASSEN
 // ==========================================
 
 async function leaveLobby(code) {
   if (!currentPlayer || !currentLobby) return;
 
-  const { data: lobby, error: loadError } = await db
-    .from("game_lobbies")
-    .select("*")
-    .eq("code", code)
-    .single();
+  try {
+    const lobby = await loadLobby(code);
 
-  if (loadError || !lobby) {
+    let players = (lobby.players || []).filter(
+      player => player.id !== currentPlayer.id
+    );
+
+    if (players.length > 0 && !players.some(player => player.isHost)) {
+      players = players.map((player, index) => ({
+        ...player,
+        isHost: index === 0
+      }));
+    }
+
+    const { error } = await db
+      .from("game_lobbies")
+      .update({ players })
+      .eq("id", lobby.id);
+
+    if (error) throw error;
+
+    const url = new URL(location.href);
+    url.search = "";
+    history.pushState({}, "", url);
+
     showStartseite();
-    return;
-  }
 
-  let players = (lobby.players || []).filter(
-    player => player.id !== currentPlayer.id
-  );
-
-  // Wenn der Spielleiter geht, übernimmt der erste verbleibende Spieler
-  if (players.length > 0 && !players.some(player => player.isHost)) {
-    players = players.map((player, index) => ({
-      ...player,
-      isHost: index === 0
-    }));
-  }
-
-  const { error } = await db
-    .from("game_lobbies")
-    .update({ players: players })
-    .eq("id", lobby.id);
-
-  if (error) {
+  } catch (error) {
     console.error(error);
     alert("Die Lobby konnte nicht verlassen werden.");
-    return;
   }
-
-  const url = new URL(location.href);
-  url.search = "";
-  history.pushState({}, "", url);
-
-  showStartseite();
 }
 
 
 // ==========================================
-// WENN EIN SPIELER ENTFERNT WURDE
+// SPIELER WURDE ENTFERNT
 // ==========================================
 
 function showRemovedPage() {
@@ -621,8 +1169,10 @@ function showRemovedPage() {
 
   currentPlayer = null;
   currentLobby = null;
+  currentView = "removed";
 
   app.classList.remove("lobby-screen");
+  app.classList.remove("game-screen");
 
   app.innerHTML = `
     <div class="logo">♫</div>
