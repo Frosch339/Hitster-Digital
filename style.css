@@ -291,6 +291,7 @@ input::placeholder {
     padding: 15px;
     font-size: 16px;
   }
+}
   
 /* ==========================================
    SPIELANSICHT – GRUNDLAYOUT
@@ -738,6 +739,7 @@ input::placeholder {
   .tablet-player-list {
     grid-template-columns: 1fr;
   }
+}
   
 /* ==========================================
    KARTEN MIT JAHR, INTERPRET UND TITEL
@@ -857,6 +859,178 @@ input::placeholder {
     font-size: 13px;
     font-weight: bold;
   }
+  
+/* ==========================================
+   NEUES SPIELKARTEN-DESIGN
+========================================== */
+
+.timeline-card,
+.phone-timeline-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #596078;
+  border-radius: 13px;
+  background:
+    radial-gradient(
+      circle at 27px 50%,
+      #aeb5c6 0 2px,
+      #202635 3px 5px,
+      #11151e 6px 13px,
+      #303849 14px 15px,
+      #11151e 16px 21px,
+      transparent 22px
+    ),
+    linear-gradient(145deg, #30394d, #171c29 75%);
+  box-shadow: 0 5px 12px #0006;
 }
+
+.timeline-card {
+  flex: 0 0 205px;
+  min-height: 145px;
+  align-items: flex-start;
+  padding: 18px 12px 14px 58px;
+  text-align: left;
+}
+
+.timeline-card strong,
+.phone-timeline-card strong {
+  display: block;
+  color: var(--akzent);
+  font-size: 27px;
+  line-height: 1.1;
+}
+
+.timeline-card .card-artist,
+.phone-timeline-card .card-artist {
+  display: block;
+  margin-top: 7px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+.timeline-card .card-title,
+.phone-timeline-card .card-title {
+  display: block;
+  margin-top: 4px;
+  color: #bfc6d5;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.phone-timeline-card {
+  flex: 0 0 175px;
+  min-height: 125px;
+  padding: 15px 10px 12px 58px;
+  align-items: center;
+}
+
+.phone-timeline-card > div {
+  min-width: 0;
+  width: 100%;
+  gap: 0;
+}
+
+.timeline-card-number {
+  z-index: 1;
+  top: 7px;
+  left: 8px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: #10131c;
+  color: #aeb5c6;
+}
+
+/* Tablet: großzügige Spielzentrale */
+
+.tablet-board {
+  max-width: 1500px;
+  padding: 36px;
+}
+
+.tablet-timeline-section {
+  padding: 22px;
+  border: 1px solid var(--rand);
+  border-radius: 20px;
+  background: #171c29;
+}
+
+.tablet-timeline-section .timeline-horizontal {
+  min-height: 180px;
+  padding: 20px;
+  background: #10131c;
+}
+
+.tablet-board .active-player-panel {
+  padding: 28px;
+}
+
+.tablet-board .active-player-panel h2 {
+  font-size: 38px;
+}
+
+/* Smartphone: Querformat und horizontales Scrollen */
+
+@media (max-width: 900px) and (orientation: landscape) {
+  body {
+    padding: 6px;
+  }
+
+  .phone-game {
+    width: 100%;
+    max-width: none;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .phone-game-header {
+    margin-bottom: 10px;
+  }
+
+  .phone-turn-status {
+    margin-bottom: 10px;
+    padding: 9px;
+  }
+
+  .phone-turn-panel {
+    margin: 10px 0;
+    padding: 12px;
+  }
+
+  .phone-timeline-section {
+    margin-top: 12px;
+  }
+
+  .timeline-vertical {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 9px;
+    min-height: 145px;
+    padding: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .phone-timeline-card {
+    flex: 0 0 175px;
+    scroll-snap-align: start;
+  }
+
+  .timeline-slot {
+    flex: 0 0 42px;
+    width: 42px;
+    min-height: 125px;
+  }
+
+  .timeline-slot.placed {
+    flex-basis: 110px;
+    width: 110px;
+  }
+}
+
+
 
 
