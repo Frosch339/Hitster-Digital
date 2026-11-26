@@ -788,21 +788,17 @@ function renderPhoneGame() {
         <h2>Neue Karte</h2>
         <p>Ordne die verdeckte Karte an der passenden Stelle ein.</p>
 
-        <div
-          id="new-card"
-          class="new-game-card ${selectedCard ? "selected" : ""}"
-          draggable="true"
-        >
-          <div class="record-icon">♫</div>
-          <strong>Neue Karte</strong>
-          <span>Antippen und Position auswählen</span>
-        </div>
+       <div class="new-game-card">
+  <div class="record-icon">♫</div>
+  <strong>Neue Karte</strong>
+  <span>Wähle eine Lücke in deiner Zeitleiste</span>
+</div>
 
         <p class="placement-help">
           ${
             currentCard && currentCard.position !== null
               ? "Position ausgewählt. Du kannst jetzt auflösen."
-              : "Ziehe die Karte an die richtige Stelle oder tippe zuerst die Karte und danach auf eine Position."
+              : "Tippe auf die gewünschte Lücke in deiner Zeitleiste."
           }
         </p>
 
@@ -851,10 +847,10 @@ function renderPhoneGame() {
           ${
             isMyTurn && currentCard && !currentCard.revealed
               ? timeline.map((song, index) => `
-                  ${renderTimelineSlot(index, currentCard.position, selectedCard)}
+                  ${renderTimelineSlot(index, currentCard.position)}
                   ${renderTimelineCard(song, index)}
                 `).join("") +
-                renderTimelineSlot(timeline.length, currentCard.position, selectedCard)
+                renderTimelineSlot(timeline.length, currentCard.position)
               : timeline.map((song, index) =>
                   renderTimelineCard(song, index)
                 ).join("")
@@ -882,22 +878,16 @@ function renderTimelineCard(song, index) {
 }
 
 
-function renderTimelineSlot(position, selectedPosition, selected) {
+function renderTimelineSlot(position, selectedPosition) {
   const isPlaced = selectedPosition === position;
 
   return `
     <button
-      class="timeline-slot ${isPlaced ? "placed" : ""} ${selected ? "slot-ready" : ""}"
+      class="timeline-slot ${isPlaced ? "placed" : ""}"
       data-position="${position}"
       type="button"
     >
-      ${
-        isPlaced
-          ? "Karte hier eingeordnet"
-          : selected
-            ? "Hier ablegen"
-            : "+"
-      }
+      ${isPlaced ? "✓ Ausgewählt" : "+"}
     </button>
   `;
 }
@@ -908,89 +898,28 @@ function renderTimelineSlot(position, selectedPosition, selected) {
 // ==========================================
 
 function attachPhoneGameEvents(lobby) {
-  const cardElement = document.querySelector("#new-card");
 
-  if (cardElement) {
-    cardElement.addEventListener("click", () => {
-      selectedCard = !selectedCard;
-      renderPhoneGame();
-    });
-
-    cardElement.addEventListener("dragstart", event => {
-      event.dataTransfer.setData("text/plain", "new-card");
-      event.dataTransfer.effectAllowed = "move";
-      selectedCard = true;
-    });
-  }
-
+  // Gewünschte Lücke direkt auswählen
   document.querySelectorAll(".timeline-slot").forEach(slot => {
     slot.addEventListener("click", () => {
-      if (selectedCard) {
-        placeCardAt(Number(slot.dataset.position));
-      }
-    });
-
-    slot.addEventListener("dragover", event => {
-      event.preventDefault();
-      slot.classList.add("drag-over");
-    });
-
-    slot.addEventListener("dragleave", () => {
-      slot.classList.remove("drag-over");
-    });
-
-    slot.addEventListener("drop", event => {
-      event.preventDefault();
-      slot.classList.remove("drag-over");
       placeCardAt(Number(slot.dataset.position));
     });
   });
 
+  // Karte auflösen
   const resolveButton = document.querySelector("#resolve-card");
 
   if (resolveButton) {
     resolveButton.addEventListener("click", resolveCard);
   }
 
+  // Nächsten Spieler starten
   const nextButton = document.querySelector("#next-turn");
 
   if (nextButton) {
     nextButton.addEventListener("click", nextTurn);
   }
 }
-
-async function placeCardAt(position) {
-  if (!currentLobby || !currentPlayer) return;
-
-  const lobby = currentLobby;
-  const players = lobby.players || [];
-  const activePlayer = players[lobby.current_player_index || 0];
-
-  if (!activePlayer || activePlayer.id !== currentPlayer.id) return;
-
-  const card = lobby.current_card;
-
-  if (!card || card.revealed) return;
-
-  const updatedCard = {
-    ...card,
-    position
-  };
-
-  const { error } = await db
-    .from("game_lobbies")
-    .update({ current_card: updatedCard })
-    .eq("code", lobby.code);
-
-  if (error) {
-    console.error(error);
-    alert("Die Position konnte nicht gespeichert werden.");
-    return;
-  }
-
-  selectedCard = false;
-}
-
 
 // ==========================================
 // KARTE AUFLÖSEN UND PRÜFEN
