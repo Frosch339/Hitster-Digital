@@ -1034,6 +1034,33 @@ input::placeholder {
     flex-basis: 110px;
     width: 110px;
   }
+  
+/* AUSGEWÄHLTE KARTENPOSITION AUF DEM TABLET */
+.tablet-timeline-slot {
+  flex: 0 0 42px;
+  min-height: 145px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #596078;
+  border-radius: 10px;
+  color: #aeb5c6;
+  font-size: 22px;
+  background: #202635;
+  opacity: 0.65;
+  transition: all 0.2s ease;
+}
+
+.tablet-timeline-slot.selected {
+  flex-basis: 100px;
+  border: 2px solid #68d6a0;
+  background: #244536;
+  color: #68d6a0;
+  opacity: 1;
+  box-shadow: 0 0 18px #68d6a055;
+  font-size: 30px;
+}
+
 }
 
 
