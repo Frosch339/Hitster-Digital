@@ -519,14 +519,17 @@ input::placeholder {
 }
 
 .tablet-player-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
   gap: 12px;
-  margin-top: 28px;
+  margin: 0 0 24px;
+  padding-bottom: 6px;
+  overflow-x: auto;
 }
 
 .tablet-player {
   display: flex;
+  flex: 0 0 180px;
   justify-content: space-between;
   gap: 8px;
   padding: 14px;
