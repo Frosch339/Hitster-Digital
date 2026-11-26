@@ -520,7 +520,7 @@ input::placeholder {
 
 .tablet-player-list {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 12px;
   margin: 0 0 24px;
   padding-bottom: 6px;
@@ -529,14 +529,16 @@ input::placeholder {
 
 .tablet-player {
   display: flex;
-  flex: 0 0 180px;
+  flex: 1 1 150px;
+  min-width: 115px;
   justify-content: space-between;
+  align-items: center;
   gap: 8px;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid var(--rand);
   border-radius: 12px;
   background: #252c3e;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .tablet-player strong {
