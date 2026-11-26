@@ -1,16 +1,22 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Hitster Digital</title>
+
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <main class="startseite">
+
+  <main class="startseite" id="app">
     <div class="logo">♫</div>
 
     <p class="untertitel">DAS MUSIKSPIEL</p>
+
     <h1>Hitster <span>Digital</span></h1>
 
     <p class="beschreibung">
@@ -18,13 +24,23 @@
       und finde heraus, wer die Musikgeschichte am besten kennt.
     </p>
 
-    <button id="create-game">Spiel erstellen</button>
+    <button id="create-game">
+      Spiel erstellen
+    </button>
 
     <p class="hinweis">
       Ein Tablet als Spielzentrale – jeder spielt mit dem eigenen Smartphone.
     </p>
   </main>
 
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- QR-Code -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Eigener Spielcode -->
   <script src="app.js"></script>
+
 </body>
 </html>
