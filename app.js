@@ -919,6 +919,42 @@ function attachPhoneGameEvents(lobby) {
   if (nextButton) {
     nextButton.addEventListener("click", nextTurn);
   }
+  
+async function placeCardAt(position) {
+  if (!currentLobby || !currentPlayer) return;
+
+  const lobby = currentLobby;
+  const players = lobby.players || [];
+  const activePlayer = players[lobby.current_player_index || 0];
+
+  // Nur der aktive Spieler darf eine Position auswählen
+  if (!activePlayer || activePlayer.id !== currentPlayer.id) return;
+
+  const card = lobby.current_card;
+
+  if (!card || card.revealed) return;
+
+  const updatedCard = {
+    ...card,
+    position: position
+  };
+
+  const { error } = await db
+    .from("game_lobbies")
+    .update({ current_card: updatedCard })
+    .eq("code", lobby.code);
+
+  if (error) {
+    console.error(error);
+    alert("Die Position konnte nicht gespeichert werden.");
+    return;
+  }
+
+  // Lokale Anzeige aktualisieren
+  currentLobby.current_card = updatedCard;
+  renderPhoneGame();
+}
+
 }
 
 // ==========================================
