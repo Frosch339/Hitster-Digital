@@ -1192,6 +1192,31 @@ function showRemovedPage() {
 // SEITE ANHAND DER URL ÖFFNEN
 // ==========================================
 
+
+async function openJoinLink(code) {
+  try {
+    const lobby = await loadLobby(code);
+    const playerId = getPlayerId();
+
+    const existingPlayer = (lobby.players || []).find(
+      player => player.id === playerId
+    );
+
+    if (
+      existingPlayer &&
+      (lobby.status === "started" || lobby.status === "finished")
+    ) {
+      currentPlayer = existingPlayer;
+      showPhoneGameScreen(code);
+    } else {
+      showJoinPage(code);
+    }
+  } catch (error) {
+    console.error(error);
+    showError(error.message);
+  }
+}
+
 function initializeApp() {
   const params = new URLSearchParams(location.search);
 
@@ -1201,10 +1226,11 @@ function initializeApp() {
   if (hostCode) {
     showHostLobby(hostCode);
   } else if (joinCode) {
-    showJoinPage(joinCode);
+    openJoinLink(joinCode);
   } else {
     showStartseite();
   }
 }
 
 initializeApp();
+
