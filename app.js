@@ -3,7 +3,6 @@
 // HITSTER DIGITAL – SPIELVERBINDUNG
 // ==========================================
 
-// Supabase-Verbindung
 const SUPABASE_URL = "https://emxuwtoysqizvazvylyb.supabase.co";
 const SUPABASE_KEY = "sb_publishable__9lNBaOjKcmpIPbwX9Kr9Q_WNeyo";
 
@@ -28,7 +27,8 @@ function createId() {
     return crypto.randomUUID();
   }
 
-  return "player-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+  return "player-" + Date.now() + "-" +
+    Math.random().toString(16).slice(2);
 }
 
 function getPlayerId() {
@@ -60,14 +60,6 @@ function escapeHtml(text) {
   });
 }
 
-function setMessage(text) {
-  const message = document.querySelector("#lobby-message");
-
-  if (message) {
-    message.textContent = text;
-  }
-}
-
 function stopRealtime() {
   if (currentChannel) {
     db.removeChannel(currentChannel);
@@ -75,21 +67,17 @@ function stopRealtime() {
   }
 }
 
-
-// ==========================================
-// STARTSEITE
-// ==========================================
-
 function showStartseite() {
   stopRealtime();
+
+  currentPlayer = null;
+  currentLobby = null;
 
   app.classList.remove("lobby-screen");
 
   app.innerHTML = `
     <div class="logo">♫</div>
-
     <p class="untertitel">DAS MUSIKSPIEL</p>
-
     <h1>Hitster <span>Digital</span></h1>
 
     <p class="beschreibung">
@@ -120,8 +108,6 @@ async function createGame() {
     <h1>Einen Moment ...</h1>
   `;
 
-  let lobby = null;
-
   try {
     const code = createGameCode();
 
@@ -134,14 +120,19 @@ async function createGame() {
       .select()
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    lobby = data;
+    currentLobby = data;
+
+    const url = new URL(location.href);
+    url.search = "";
+    url.searchParams.set("host", code);
+    history.pushState({}, "", url);
+
+    showHostLobby(code);
 
   } catch (error) {
-    console.error("Fehler beim Erstellen:", error);
+    console.error(error);
 
     app.innerHTML = `
       <h1>Fehler</h1>
@@ -149,26 +140,17 @@ async function createGame() {
         Das Spiel konnte nicht erstellt werden.
       </p>
       <p class="hinweis">${escapeHtml(error.message)}</p>
-      <button onclick="showStartseite()">Zurück</button>
+      <button id="back-home">Zurück</button>
     `;
 
-    return;
+    document.querySelector("#back-home")
+      .addEventListener("click", showStartseite);
   }
-
-  currentLobby = lobby;
-
-  const url = new URL(location.href);
-  url.search = "";
-  url.searchParams.set("host", lobby.code);
-
-  history.pushState({}, "", url);
-
-  showHostLobby(lobby.code);
 }
 
 
 // ==========================================
-// LOBBY AUF DEM TABLET ANZEIGEN
+// LOBBY AUF DEM TABLET
 // ==========================================
 
 async function showHostLobby(code) {
@@ -178,7 +160,6 @@ async function showHostLobby(code) {
 
   app.innerHTML = `
     <div class="lobby-layout">
-
       <section class="qr-section">
         <p class="untertitel">SPIELZENTRALE</p>
         <h1>Deine Lobby</h1>
@@ -195,7 +176,7 @@ async function showHostLobby(code) {
       </section>
 
       <section class="players-section">
-        <p class="untertitel">DEINE SPIELRUNDE</p>
+        <p class="untertitel">SPIELRUNDE</p>
         <h2>Spieler</h2>
 
         <div id="player-list" class="player-list">
@@ -206,11 +187,9 @@ async function showHostLobby(code) {
           Sobald Spieler beitreten, erscheinen sie hier.
         </p>
       </section>
-
     </div>
   `;
 
-  // QR-Code für die Smartphones erstellen
   const joinUrl = new URL(location.href);
   joinUrl.search = "";
   joinUrl.searchParams.set("join", code);
@@ -224,7 +203,6 @@ async function showHostLobby(code) {
     correctLevel: QRCode.CorrectLevel.H
   });
 
-  // Bestehende Lobby laden
   const { data, error } = await db
     .from("game_lobbies")
     .select("*")
@@ -233,16 +211,14 @@ async function showHostLobby(code) {
 
   if (error) {
     console.error(error);
-    setMessage("Die Lobby konnte nicht geladen werden.");
     return;
   }
 
   currentLobby = data;
   renderHostLobby(data.players || [], data.status || "waiting");
 
-  // Änderungen live empfangen
   currentChannel = db
-    .channel("lobby-" + code)
+    .channel("tablet-lobby-" + code)
     .on(
       "postgres_changes",
       {
@@ -265,7 +241,7 @@ async function showHostLobby(code) {
 
 
 // ==========================================
-// SPIELERLISTE AUF DEM TABLET AKTUALISIEREN
+// SPIELERLISTE AUF DEM TABLET
 // ==========================================
 
 function renderHostLobby(players, status) {
@@ -315,7 +291,7 @@ function renderHostLobby(players, status) {
 
 
 // ==========================================
-// SMARTPHONE: LOBBY BEITRETEN
+// SMARTPHONE: BEITRITTSSEITE
 // ==========================================
 
 function showJoinPage(code) {
@@ -325,7 +301,6 @@ function showJoinPage(code) {
 
   app.innerHTML = `
     <div class="logo">♫</div>
-
     <p class="untertitel">DU BIST DABEI</p>
     <h1>Spiel beitreten</h1>
 
@@ -344,7 +319,6 @@ function showJoinPage(code) {
     >
 
     <button id="join-game">Spiel beitreten</button>
-
     <p id="lobby-message" class="hinweis"></p>
   `;
 
@@ -353,15 +327,13 @@ function showJoinPage(code) {
 
   document.querySelector("#player-name")
     .addEventListener("keydown", event => {
-      if (event.key === "Enter") {
-        joinGame(code);
-      }
+      if (event.key === "Enter") joinGame(code);
     });
 }
 
 
 // ==========================================
-// SPIELER IN SUPABASE EINTRAGEN
+// SPIELER BEITRETEN
 // ==========================================
 
 async function joinGame(code) {
@@ -369,23 +341,24 @@ async function joinGame(code) {
   const name = nameInput.value.trim();
 
   if (!name) {
-    setMessage("Bitte gib zuerst deinen Namen ein.");
+    document.querySelector("#lobby-message").textContent =
+      "Bitte gib zuerst deinen Namen ein.";
     nameInput.focus();
     return;
   }
 
-  const joinButton = document.querySelector("#join-game");
-  joinButton.disabled = true;
-  joinButton.textContent = "Beitritt läuft ...";
+  const button = document.querySelector("#join-game");
+  button.disabled = true;
+  button.textContent = "Beitritt läuft ...";
 
   try {
-    const { data: lobby, error: loadError } = await db
+    const { data: lobby, error } = await db
       .from("game_lobbies")
       .select("*")
       .eq("code", code)
       .single();
 
-    if (loadError || !lobby) {
+    if (error || !lobby) {
       throw new Error("Diese Lobby wurde nicht gefunden.");
     }
 
@@ -396,8 +369,9 @@ async function joinGame(code) {
     const playerId = getPlayerId();
     const players = lobby.players || [];
 
-    // Prüfen, ob dieses Smartphone bereits beigetreten ist
-    const existingPlayer = players.find(player => player.id === playerId);
+    const existingPlayer = players.find(
+      player => player.id === playerId
+    );
 
     if (existingPlayer) {
       currentPlayer = existingPlayer;
@@ -406,13 +380,10 @@ async function joinGame(code) {
       return;
     }
 
-    // Der erste Spieler wird automatisch Spielleiter
-    const isFirstPlayer = players.length === 0;
-
     const newPlayer = {
       id: playerId,
       name: name,
-      isHost: isFirstPlayer
+      isHost: players.length === 0
     };
 
     players.push(newPlayer);
@@ -424,9 +395,7 @@ async function joinGame(code) {
       .select()
       .single();
 
-    if (updateError) {
-      throw updateError;
-    }
+    if (updateError) throw updateError;
 
     currentPlayer = newPlayer;
     currentLobby = updatedLobby;
@@ -436,28 +405,29 @@ async function joinGame(code) {
   } catch (error) {
     console.error(error);
 
-    setMessage(error.message);
+    const message = document.querySelector("#lobby-message");
+    if (message) message.textContent = error.message;
 
-    joinButton.disabled = false;
-    joinButton.textContent = "Spiel beitreten";
+    button.disabled = false;
+    button.textContent = "Spiel beitreten";
   }
 }
 
 
 // ==========================================
-// SMARTPHONE: ERFOLGREICH BEIGETRETEN
+// SMARTPHONE: LOBBY-ANSICHT
 // ==========================================
 
 function showJoinedPage(code) {
+  stopRealtime();
+
   app.classList.remove("lobby-screen");
 
   const isHost = currentPlayer && currentPlayer.isHost;
 
   app.innerHTML = `
     <div class="logo">♫</div>
-
     <p class="untertitel">DU BIST DABEI</p>
-
     <h1>Hallo, ${escapeHtml(currentPlayer.name)}!</h1>
 
     ${
@@ -467,7 +437,6 @@ function showJoinedPage(code) {
             <h2>Du bist Spieler 1</h2>
             <p>Du bist der Spielleiter und kannst die Runde starten.</p>
           </div>
-
           <button id="start-game">Spiel starten</button>
         `
         : `
@@ -490,17 +459,58 @@ function showJoinedPage(code) {
 
   document.querySelector("#leave-game")
     .addEventListener("click", () => leaveLobby(code));
+
+  // Änderungen der Lobby auf diesem Smartphone empfangen
+  currentChannel = db
+    .channel("phone-lobby-" + code + "-" + currentPlayer.id)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "game_lobbies",
+        filter: "code=eq." + code
+      },
+      payload => {
+        currentLobby = payload.new;
+
+        const players = payload.new.players || [];
+
+        const updatedPlayer = players.find(
+          player => player.id === currentPlayer.id
+        );
+
+        // Spieler wurde aus der Lobby entfernt
+        if (!updatedPlayer) {
+          showRemovedPage();
+          return;
+        }
+
+        // Spielleiterstatus aktualisieren
+        currentPlayer = updatedPlayer;
+
+        // Alle Smartphones wechseln gleichzeitig zum Spiel
+        if (payload.new.status === "started") {
+          showGameScreen(code);
+          return;
+        }
+
+        // Bei einem Spielleiterwechsel Ansicht aktualisieren
+        if (updatedPlayer.isHost !== isHost) {
+          showJoinedPage(code);
+        }
+      }
+    )
+    .subscribe();
 }
 
 
 // ==========================================
-// SPIEL STARTEN – NUR SPIELLEITER
+// SPIELSTART AUF DEM SMARTPHONE
 // ==========================================
 
 async function startGame(code) {
-  if (!currentPlayer || !currentPlayer.isHost) {
-    return;
-  }
+  if (!currentPlayer || !currentPlayer.isHost) return;
 
   const button = document.querySelector("#start-game");
 
@@ -527,13 +537,38 @@ async function startGame(code) {
 
 
 // ==========================================
-// LOBBY VERLASSEN
+// SPIELANSICHT – VORLÄUFIG
+// ==========================================
+
+function showGameScreen(code) {
+  stopRealtime();
+
+  app.classList.remove("lobby-screen");
+
+  app.innerHTML = `
+    <div class="logo">♫</div>
+    <p class="untertitel">HITSTER DIGITAL</p>
+    <h1>Das Spiel beginnt!</h1>
+
+    <div class="waiting-box">
+      <h2>Hallo, ${escapeHtml(currentPlayer.name)}!</h2>
+      <p>
+        Du bist jetzt im Spiel.
+        Als Nächstes bauen wir die Spielzüge und die Zeitleiste ein.
+      </p>
+    </div>
+
+    <p class="hinweis">Spielcode: ${escapeHtml(code)}</p>
+  `;
+}
+
+
+// ==========================================
+// SPIELER VERLÄSST DIE LOBBY
 // ==========================================
 
 async function leaveLobby(code) {
-  if (!currentPlayer || !currentLobby) {
-    return;
-  }
+  if (!currentPlayer || !currentLobby) return;
 
   const { data: lobby, error: loadError } = await db
     .from("game_lobbies")
@@ -550,7 +585,7 @@ async function leaveLobby(code) {
     player => player.id !== currentPlayer.id
   );
 
-  // Wenn der Spielleiter geht, übernimmt der nächste Spieler
+  // Wenn der Spielleiter geht, übernimmt der erste verbleibende Spieler
   if (players.length > 0 && !players.some(player => player.isHost)) {
     players = players.map((player, index) => ({
       ...player,
@@ -569,14 +604,37 @@ async function leaveLobby(code) {
     return;
   }
 
-  currentPlayer = null;
-  currentLobby = null;
-
   const url = new URL(location.href);
   url.search = "";
   history.pushState({}, "", url);
 
   showStartseite();
+}
+
+
+// ==========================================
+// WENN EIN SPIELER ENTFERNT WURDE
+// ==========================================
+
+function showRemovedPage() {
+  stopRealtime();
+
+  currentPlayer = null;
+  currentLobby = null;
+
+  app.classList.remove("lobby-screen");
+
+  app.innerHTML = `
+    <div class="logo">♫</div>
+    <h1>Lobby verlassen</h1>
+    <p class="beschreibung">
+      Du bist nicht mehr Teil dieser Spielrunde.
+    </p>
+    <button id="back-home">Zur Startseite</button>
+  `;
+
+  document.querySelector("#back-home")
+    .addEventListener("click", showStartseite);
 }
 
 
