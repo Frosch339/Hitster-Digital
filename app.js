@@ -667,6 +667,15 @@ function renderTabletGame() {
         <div class="round-label">RUNDE ${lobby.round_number || 1}</div>
       </header>
 
+      <section class="tablet-player-list">
+        ${players.map((player, index) => `
+          <div class="tablet-player ${index === playerIndex ? "active" : ""}">
+            <span>${escapeHtml(player.name)}</span>
+            <strong>${(timelines[player.id] || []).length} Karten</strong>
+          </div>
+        `).join("")}
+      </section>
+
       <section class="active-player-panel">
         <p class="untertitel">JETZT AM ZUG</p>
         <h2>${escapeHtml(activePlayer.name)}</h2>
@@ -695,14 +704,7 @@ function renderTabletGame() {
         </div>
       </section>
 
-      <section class="tablet-player-list">
-        ${players.map((player, index) => `
-          <div class="tablet-player ${index === playerIndex ? "active" : ""}">
-            <span>${escapeHtml(player.name)}</span>
-            <strong>${(timelines[player.id] || []).length} Karten</strong>
-          </div>
-        `).join("")}
-      </section>
+      
     </div>
   `;
 }
