@@ -738,5 +738,125 @@ input::placeholder {
   .tablet-player-list {
     grid-template-columns: 1fr;
   }
+  
+/* ==========================================
+   KARTEN MIT JAHR, INTERPRET UND TITEL
+========================================== */
+
+.card-year {
+  color: var(--akzent);
+  font-size: 25px;
+  font-weight: bold;
 }
+
+.card-artist {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.card-title {
+  color: var(--text-gedimmt);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.timeline-card .card-artist,
+.timeline-card .card-title {
+  display: block;
+  max-width: 100%;
+  line-height: 1.35;
+}
+
+/* ==========================================
+   SMARTPHONE IM QUERFORMAT
+========================================== */
+
+@media (max-width: 900px) and (orientation: landscape) {
+  body {
+    padding: 8px;
+  }
+
+  .phone-game {
+    width: 100%;
+    max-width: none;
+    padding: 14px 18px;
+  }
+
+  .phone-game-header {
+    margin-bottom: 12px;
+  }
+
+  .phone-game-header h1 {
+    font-size: 28px;
+  }
+
+  .phone-turn-panel {
+    margin: 12px 0;
+    padding: 14px;
+  }
+
+  .phone-turn-panel .new-game-card {
+    display: inline-flex;
+    width: 180px;
+    margin: 8px;
+    padding: 10px;
+  }
+
+  .phone-turn-panel .record-icon {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 4px;
+    font-size: 20px;
+  }
+
+  .phone-timeline-section {
+    margin-top: 16px;
+  }
+
+  .timeline-vertical {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 8px;
+    min-height: 125px;
+    padding: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .phone-timeline-card {
+    flex: 0 0 145px;
+    min-height: 105px;
+    scroll-snap-align: start;
+  }
+
+  .timeline-slot {
+    flex: 0 0 42px;
+    width: 42px;
+    min-height: 105px;
+    padding: 4px;
+    font-size: 11px;
+  }
+
+  .timeline-slot.placed {
+    flex-basis: 110px;
+    width: 110px;
+  }
+}
+
+/* Hinweis im Hochformat */
+@media (max-width: 900px) and (orientation: portrait) {
+  .phone-turn-panel::before {
+    content: "Tipp: Halte dein Smartphone quer für die Zeitleiste.";
+    display: block;
+    margin-bottom: 12px;
+    color: var(--akzent);
+    font-size: 13px;
+    font-weight: bold;
+  }
+}
+
 
