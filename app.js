@@ -600,6 +600,7 @@ async function showTabletGameScreen(code) {
 }
 
 
+
 function renderTabletGame() {
   const lobby = currentLobby;
   if (!lobby) return;
@@ -657,6 +658,33 @@ function renderTabletGame() {
     `;
   }
 
+  const showSlots = currentCard && !currentCard.revealed;
+
+  const timelineHtml = timeline.map((song, index) => `
+    ${showSlots ? `
+      <div class="tablet-timeline-slot ${
+        currentCard.position === index ? "selected" : ""
+      }">
+        ${currentCard.position === index ? "✓" : "+"}
+      </div>
+    ` : ""}
+
+    <div class="timeline-card">
+      <span class="timeline-card-number">${index + 1}</span>
+      <strong>${song.year}</strong>
+      <span class="card-artist">${escapeHtml(song.artist)}</span>
+      <span class="card-title">${escapeHtml(song.title)}</span>
+    </div>
+  `).join("");
+
+  const finalSlot = showSlots ? `
+    <div class="tablet-timeline-slot ${
+      currentCard.position === timeline.length ? "selected" : ""
+    }">
+      ${currentCard.position === timeline.length ? "✓" : "+"}
+    </div>
+  ` : "";
+
   app.innerHTML = `
     <div class="game-board tablet-board">
       <header class="game-header">
@@ -691,20 +719,10 @@ function renderTabletGame() {
         </div>
 
         <div class="timeline-horizontal">
-          ${
-            timeline.map((song, index) => `
-              <div class="timeline-card">
-              <span class="timeline-card-number">${index + 1}</span>
-              <strong>${song.year}</strong>
-                <span class="card-artist">${escapeHtml(song.artist)}</span>
-                <span class="card-title">${escapeHtml(song.title)}</span>
-                </div>
-            `).join("")
-          }
+          ${timelineHtml}
+          ${finalSlot}
         </div>
       </section>
-
-      
     </div>
   `;
 }
