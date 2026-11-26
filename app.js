@@ -579,11 +579,13 @@ async function startGame(code) {
 // TABLET – SPIELANSICHT
 // ==========================================
 
+
 async function showTabletGameScreen(code) {
   stopRealtime();
   currentView = "tablet-game";
   currentPlayer = null;
 
+  app.classList.remove("startseite");
   app.classList.remove("lobby-screen");
   app.classList.add("game-screen");
 
@@ -596,6 +598,7 @@ async function showTabletGameScreen(code) {
     showError(error.message);
   }
 }
+
 
 function renderTabletGame() {
   const lobby = currentLobby;
@@ -682,10 +685,11 @@ function renderTabletGame() {
           ${
             timeline.map((song, index) => `
               <div class="timeline-card">
-                <span class="timeline-card-number">${index + 1}</span>
-                <strong>${song.year}</strong>
-                <span>${escapeHtml(song.title)}</span>
-              </div>
+              <span class="timeline-card-number">${index + 1}</span>
+              <strong>${song.year}</strong>
+                <span class="card-artist">${escapeHtml(song.artist)}</span>
+                <span class="card-title">${escapeHtml(song.title)}</span>
+                </div>
             `).join("")
           }
         </div>
@@ -708,11 +712,13 @@ function renderTabletGame() {
 // SMARTPHONE – SPIELANSICHT
 // ==========================================
 
+
 async function showPhoneGameScreen(code) {
   stopRealtime();
   currentView = "phone-game";
   selectedCard = false;
 
+  app.classList.remove("startseite");
   app.classList.remove("lobby-screen");
   app.classList.add("game-screen");
 
@@ -725,6 +731,7 @@ async function showPhoneGameScreen(code) {
     showError(error.message);
   }
 }
+
 
 function renderPhoneGame() {
   const lobby = currentLobby;
@@ -858,17 +865,20 @@ function renderPhoneGame() {
   attachPhoneGameEvents(lobby);
 }
 
+
 function renderTimelineCard(song, index) {
   return `
     <div class="phone-timeline-card">
       <span class="timeline-card-number">${index + 1}</span>
       <div>
-        <strong>${song.year}</strong>
-        <span>${escapeHtml(song.title)}</span>
+        <strong class="card-year">${song.year}</strong>
+        <span class="card-artist">${escapeHtml(song.artist)}</span>
+        <span class="card-title">${escapeHtml(song.title)}</span>
       </div>
     </div>
   `;
 }
+
 
 function renderTimelineSlot(position, selectedPosition, selected) {
   const isPlaced = selectedPosition === position;
