@@ -1061,6 +1061,78 @@ input::placeholder {
   font-size: 30px;
 }
 
+/* VERDECKTE DIGITALE HITSTER-KARTE */
+
+.tablet-timeline-slot {
+  box-sizing: border-box;
+  flex: 0 0 42px;
+  min-height: 145px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #596078;
+  border-radius: 10px;
+  color: #aeb5c6;
+  font-size: 22px;
+  background: #202635;
+  opacity: 0.65;
+  transition: all 0.25s ease;
+}
+
+.tablet-timeline-slot.selected {
+  flex: 0 0 205px;
+  min-height: 145px;
+  padding: 10px;
+  border: 1px solid #737b91;
+  border-radius: 13px;
+  background:
+    linear-gradient(145deg, #343b4b, #10131c 75%);
+  opacity: 1;
+  box-shadow: 0 5px 18px #0008;
+}
+
+.tablet-hidden-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.tablet-card-brand {
+  color: #d9dce5;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+#tablet-card-qr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  padding: 3px;
+  background: white;
+  border-radius: 4px;
+}
+
+#tablet-card-qr img,
+#tablet-card-qr canvas {
+  display: block;
+  max-width: 82px;
+  max-height: 82px;
+}
+
+.tablet-card-label {
+  color: #aeb5c6;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
 }
 
 
