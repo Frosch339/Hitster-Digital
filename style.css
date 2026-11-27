@@ -1202,6 +1202,50 @@ input::placeholder {
   width: 100%;
   margin-top: 0;
 }
+  /* Verdeckte Karte: gleiche Größe wie die Timeline-Karten */
+.tablet-timeline-slot.selected {
+  box-sizing: border-box;
+  flex: 0 0 205px;
+  width: 205px;
+  min-height: 145px;
+  height: 145px;
+  padding: 10px;
+}
+
+/* Inhalt der verdeckten Karte */
+.tablet-hidden-card {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+/* QR-Code mittig auf der Karte */
+#tablet-card-qr {
+  width: 82px;
+  height: 82px;
+  padding: 3px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 4px;
+}
+
+#tablet-card-qr img,
+#tablet-card-qr canvas {
+  display: block;
+  width: 82px;
+  height: 82px;
+  max-width: 82px;
+  max-height: 82px;
+}
 
 }
 
