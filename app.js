@@ -661,13 +661,25 @@ function renderTabletGame() {
   const showSlots = currentCard && !currentCard.revealed;
 
   const timelineHtml = timeline.map((song, index) => `
-    ${showSlots ? `
-      <div class="tablet-timeline-slot ${
-        currentCard.position === index ? "selected" : ""
-      }">
-        ${currentCard.position === index ? "✓" : "+"}
-      </div>
-    ` : ""}
+    
+${showSlots ? `
+  <div class="tablet-timeline-slot ${
+    currentCard.position === index ? "selected" : ""
+  }">
+    ${
+      currentCard.position === index
+        ? `
+          <div class="tablet-hidden-card">
+            <span class="tablet-card-brand">HITSTER DIGITAL</span>
+            <div id="tablet-card-qr"></div>
+            <span class="tablet-card-label">VERDECKTE KARTE</span>
+          </div>
+        `
+        : "+"
+    }
+  </div>
+` : ""}
+
 
     <div class="timeline-card">
       <span class="timeline-card-number">${index + 1}</span>
@@ -677,13 +689,25 @@ function renderTabletGame() {
     </div>
   `).join("");
 
-  const finalSlot = showSlots ? `
-    <div class="tablet-timeline-slot ${
-      currentCard.position === timeline.length ? "selected" : ""
-    }">
-      ${currentCard.position === timeline.length ? "✓" : "+"}
-    </div>
-  ` : "";
+  
+const finalSlot = showSlots ? `
+  <div class="tablet-timeline-slot ${
+    currentCard.position === timeline.length ? "selected" : ""
+  }">
+    ${
+      currentCard.position === timeline.length
+        ? `
+          <div class="tablet-hidden-card">
+            <span class="tablet-card-brand">HITSTER DIGITAL</span>
+            <div id="tablet-card-qr"></div>
+            <span class="tablet-card-label">VERDECKTE KARTE</span>
+          </div>
+        `
+        : "+"
+    }
+  </div>
+` : "";
+
 
   app.innerHTML = `
     <div class="game-board tablet-board">
@@ -725,6 +749,18 @@ function renderTabletGame() {
       </section>
     </div>
   `;
+  
+    const qrContainer = document.getElementById("tablet-card-qr");
+
+  if (qrContainer && typeof QRCode !== "undefined") {
+    new QRCode(qrContainer, {
+      text: `HITSTER-DIGITAL-${lobby.code}-${lobby.round_number}`,
+      width: 82,
+      height: 82,
+      colorDark: "#111111",
+      colorLight: "#ffffff"
+    });
+  }
 }
 
 
