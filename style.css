@@ -258,44 +258,7 @@ input::placeholder {
   line-height: 1.6;
 }
 
-/* KLEINE BILDSCHIRME */
-
-@media (max-width: 700px) {
-  body {
-    padding: 14px;
-  }
-
-  .startseite {
-    padding: 36px 22px;
-  }
-
-  .startseite.lobby-screen {
-    padding: 28px 18px;
-  }
-
-  .lobby-layout {
-    grid-template-columns: 1fr;
-    gap: 38px;
-  }
-
-  .qr-section {
-    padding-bottom: 28px;
-    border-bottom: 1px solid var(--rand);
-  }
-
-  .game-code {
-    letter-spacing: 7px;
-  }
-
-  .player-item {
-    padding: 15px;
-    font-size: 16px;
-  }
-}
-  
-/* ==========================================
-   SPIELANSICHT – GRUNDLAYOUT
-========================================== */
+/* SPIELANSICHT – GRUNDLAYOUT */
 
 .game-screen {
   width: 100%;
@@ -358,9 +321,7 @@ input::placeholder {
   color: var(--text-gedimmt);
 }
 
-/* ==========================================
-   NEUE KARTE UND AUFLÖSUNG
-========================================== */
+/* NEUE KARTE UND AUFLÖSUNG */
 
 .tablet-current-card,
 .phone-turn-panel {
@@ -445,9 +406,7 @@ input::placeholder {
   font-size: 17px;
 }
 
-/* ==========================================
-   TABLET – HORIZONTALE ZEITLEISTE
-========================================== */
+/* TABLET – HORIZONTALE ZEITLEISTE */
 
 .tablet-timeline-section {
   margin: 30px 0;
@@ -486,35 +445,66 @@ input::placeholder {
 .timeline-card {
   display: flex;
   position: relative;
-  flex: 0 0 145px;
+  flex: 0 0 205px;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  min-height: 100px;
-  padding: 16px 10px;
-  border: 1px solid #4b566f;
-  border-radius: 14px;
-  background: #252c3e;
+  min-height: 145px;
+  padding: 18px 12px 14px;
+  border: 1px solid #596078;
+  border-radius: 13px;
+  background:
+    radial-gradient(
+      circle at 27px 50%,
+      #aeb5c6 0 2px,
+      #202635 3px 5px,
+      #11151e 6px 13px,
+      #303849 14px 15px,
+      #11151e 16px 21px,
+      transparent 22px
+    ),
+    linear-gradient(145deg, #30394d, #171c29 75%);
+  box-shadow: 0 5px 12px #0006;
   text-align: center;
+  overflow: hidden;
 }
 
 .timeline-card strong {
+  order: 2;
+  margin: auto 0;
   color: var(--akzent);
-  font-size: 26px;
+  font-size: 27px;
+  line-height: 1.1;
 }
 
-.timeline-card > span:last-child {
-  color: var(--text-gedimmt);
+.timeline-card .card-artist {
+  order: 1;
+  width: 100%;
+  margin-top: 0;
+  color: #fff;
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+.timeline-card .card-title {
+  order: 3;
+  width: 100%;
+  margin-top: 0;
+  color: #bfc6d5;
   font-size: 12px;
-  overflow-wrap: anywhere;
+  line-height: 1.3;
 }
 
 .timeline-card-number {
   position: absolute;
+  z-index: 1;
   top: 7px;
-  left: 9px;
-  color: var(--text-gedimmt);
+  left: 8px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: #10131c;
+  color: #aeb5c6;
   font-size: 10px;
 }
 
@@ -549,9 +539,7 @@ input::placeholder {
   border-color: var(--akzent);
 }
 
-/* ==========================================
-   SMARTPHONE – VERTIKALE ZEITLEISTE
-========================================== */
+/* SMARTPHONE – VERTIKALE ZEITLEISTE */
 
 .phone-game {
   width: min(100%, 560px);
@@ -645,30 +633,89 @@ input::placeholder {
 
 .phone-timeline-card {
   display: flex;
-  align-items: center;
+  position: relative;
+  flex: 0 0 175px;
+  align-items: stretch;
+  min-height: 125px;
   gap: 16px;
-  min-height: 76px;
-  padding: 14px;
-  border: 1px solid #4b566f;
-  border-radius: 12px;
-  background: #252c3e;
+  padding: 15px 10px 12px;
+  border: 1px solid #596078;
+  border-radius: 13px;
+  background:
+    radial-gradient(
+      circle at 27px 50%,
+      #aeb5c6 0 2px,
+      #202635 3px 5px,
+      #11151e 6px 13px,
+      #303849 14px 15px,
+      #11151e 16px 21px,
+      transparent 22px
+    ),
+    linear-gradient(145deg, #30394d, #171c29 75%);
+  box-shadow: 0 5px 12px #0006;
+  text-align: center;
+  overflow: hidden;
 }
 
 .phone-timeline-card > div {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
   gap: 5px;
 }
 
 .phone-timeline-card strong {
+  order: 2;
+  margin: auto 0;
   color: var(--akzent);
   font-size: 24px;
 }
 
-.phone-timeline-card span:last-child {
-  color: var(--text-gedimmt);
+.phone-timeline-card .card-artist {
+  order: 1;
+  width: 100%;
+  margin-top: 0;
+  color: #fff;
   font-size: 13px;
+  font-weight: bold;
 }
+
+.phone-timeline-card .card-year {
+  order: 2;
+  margin: auto 0;
+}
+
+.phone-timeline-card .card-title {
+  order: 3;
+  width: 100%;
+  margin-top: 0;
+  color: #bfc6d5;
+  font-size: 12px;
+}
+
+.card-year {
+  color: var(--akzent);
+  font-size: 25px;
+  font-weight: bold;
+}
+
+.card-artist {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.card-title {
+  color: var(--text-gedimmt);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* SMARTPHONE ZEITLEISTEN-POSITIONEN */
 
 .timeline-slot {
   width: 100%;
@@ -706,248 +753,92 @@ input::placeholder {
   line-height: 1.5;
 }
 
-/* ==========================================
-   RESPONSIVE ANPASSUNGEN
-========================================== */
+/* TABLET – VERDECKTE KARTE UND AUSGEWÄHLTE POSITION */
 
-@media (max-width: 700px) {
-  body {
-    padding: 10px;
-  }
-
-  .game-board {
-    padding: 18px;
-  }
-
-  .phone-game {
-    padding: 22px 16px;
-  }
-
-  .game-header,
-  .phone-game-header {
-    align-items: flex-start;
-  }
-
-  .round-label {
-    padding: 9px 11px;
-    font-size: 11px;
-  }
-
-  .active-player-panel {
-    padding: 18px;
-  }
-
-  .timeline-horizontal {
-    justify-content: flex-start;
-  }
-
-  .tablet-player-list {
-    grid-template-columns: 1fr;
-  }
-}
-  
-/* ==========================================
-   KARTEN MIT JAHR, INTERPRET UND TITEL
-========================================== */
-
-.card-year {
-  color: var(--akzent);
-  font-size: 25px;
-  font-weight: bold;
-}
-
-.card-artist {
-  color: var(--text);
-  font-size: 13px;
-  font-weight: bold;
-  overflow-wrap: anywhere;
-}
-
-.card-title {
-  color: var(--text-gedimmt);
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-
-.timeline-card .card-artist,
-.timeline-card .card-title {
-  display: block;
-  max-width: 100%;
-  line-height: 1.35;
-}
-
-/* ==========================================
-   SMARTPHONE IM QUERFORMAT
-========================================== */
-
-@media (max-width: 900px) and (orientation: landscape) {
-  body {
-    padding: 8px;
-  }
-
-  .phone-game {
-    width: 100%;
-    max-width: none;
-    padding: 14px 18px;
-  }
-
-  .phone-game-header {
-    margin-bottom: 12px;
-  }
-
-  .phone-game-header h1 {
-    font-size: 28px;
-  }
-
-  .phone-turn-panel {
-    margin: 12px 0;
-    padding: 14px;
-  }
-
-  .phone-turn-panel .new-game-card {
-    display: inline-flex;
-    width: 180px;
-    margin: 8px;
-    padding: 10px;
-  }
-
-  .phone-turn-panel .record-icon {
-    width: 42px;
-    height: 42px;
-    margin-bottom: 4px;
-    font-size: 20px;
-  }
-
-  .phone-timeline-section {
-    margin-top: 16px;
-  }
-
-  .timeline-vertical {
-    flex-direction: row;
-    align-items: stretch;
-    gap: 8px;
-    min-height: 125px;
-    padding: 10px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x proximity;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .phone-timeline-card {
-    flex: 0 0 145px;
-    min-height: 105px;
-    scroll-snap-align: start;
-  }
-
-  .timeline-slot {
-    flex: 0 0 42px;
-    width: 42px;
-    min-height: 105px;
-    padding: 4px;
-    font-size: 11px;
-  }
-
-  .timeline-slot.placed {
-    flex-basis: 110px;
-    width: 110px;
-  }
-}
-
-/* Hinweis im Hochformat */
-@media (max-width: 900px) and (orientation: portrait) {
-  .phone-turn-panel::before {
-    content: "Tipp: Halte dein Smartphone quer für die Zeitleiste.";
-    display: block;
-    margin-bottom: 12px;
-    color: var(--akzent);
-    font-size: 13px;
-    font-weight: bold;
-  }
-  
-/* ==========================================
-   NEUES SPIELKARTEN-DESIGN
-========================================== */
-
-.timeline-card,
-.phone-timeline-card {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid #596078;
-  border-radius: 13px;
-  background:
-    radial-gradient(
-      circle at 27px 50%,
-      #aeb5c6 0 2px,
-      #202635 3px 5px,
-      #11151e 6px 13px,
-      #303849 14px 15px,
-      #11151e 16px 21px,
-      transparent 22px
-    ),
-    linear-gradient(145deg, #30394d, #171c29 75%);
-  box-shadow: 0 5px 12px #0006;
-}
-
-.timeline-card {
-  flex: 0 0 205px;
+.tablet-timeline-slot {
+  box-sizing: border-box;
+  flex: 0 0 42px;
+  width: 42px;
   min-height: 145px;
-  align-items: flex-start;
-  padding: 18px 12px 14px 58px;
-  text-align: left;
-}
-
-.timeline-card strong,
-.phone-timeline-card strong {
-  display: block;
-  color: var(--akzent);
-  font-size: 27px;
-  line-height: 1.1;
-}
-
-.timeline-card .card-artist,
-.phone-timeline-card .card-artist {
-  display: block;
-  margin-top: 7px;
-  color: #fff;
-  font-size: 13px;
-  font-weight: bold;
-  line-height: 1.3;
-}
-
-.timeline-card .card-title,
-.phone-timeline-card .card-title {
-  display: block;
-  margin-top: 4px;
-  color: #bfc6d5;
-  font-size: 12px;
-  line-height: 1.3;
-}
-
-.phone-timeline-card {
-  flex: 0 0 175px;
-  min-height: 125px;
-  padding: 15px 10px 12px 58px;
+  display: flex;
   align-items: center;
-}
-
-.phone-timeline-card > div {
-  min-width: 0;
-  width: 100%;
-  gap: 0;
-}
-
-.timeline-card-number {
-  z-index: 1;
-  top: 7px;
-  left: 8px;
-  padding: 3px 6px;
-  border-radius: 5px;
-  background: #10131c;
+  justify-content: center;
+  border: 2px dashed #596078;
+  border-radius: 10px;
   color: #aeb5c6;
+  font-size: 22px;
+  background: #202635;
+  opacity: 0.65;
+  transition: all 0.2s ease;
 }
 
-/* Tablet: großzügige Spielzentrale */
+/* Ausgewählte Position: vollständige Kartenfläche */
+
+.tablet-timeline-slot.selected {
+  box-sizing: border-box;
+  flex: 0 0 205px;
+  width: 205px;
+  height: 145px;
+  min-height: 145px;
+  flex-shrink: 0;
+  padding: 10px;
+  border: 1px solid #737b91;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #343b4b, #10131c 75%);
+  opacity: 1;
+  box-shadow: 0 5px 18px #0008;
+}
+
+/* Inhalt der verdeckten Karte */
+
+.tablet-hidden-card {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.tablet-card-brand {
+  color: #d9dce5;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+#tablet-card-qr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 82px;
+  height: 82px;
+  padding: 3px;
+  box-sizing: border-box;
+  background: white;
+  border-radius: 4px;
+}
+
+#tablet-card-qr img,
+#tablet-card-qr canvas {
+  display: block;
+  width: 82px;
+  height: 82px;
+  max-width: 82px;
+  max-height: 82px;
+}
+
+.tablet-card-label {
+  color: #aeb5c6;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+/* TABLET – SPIELZENTRALE */
 
 .tablet-board {
   max-width: 1500px;
@@ -975,7 +866,72 @@ input::placeholder {
   font-size: 38px;
 }
 
-/* Smartphone: Querformat und horizontales Scrollen */
+/* RESPONSIVE ANPASSUNGEN – KLEINE BILDSCHIRME */
+
+@media (max-width: 700px) {
+  body {
+    padding: 10px;
+  }
+
+  .startseite {
+    padding: 36px 22px;
+  }
+
+  .startseite.lobby-screen {
+    padding: 28px 18px;
+  }
+
+  .lobby-layout {
+    grid-template-columns: 1fr;
+    gap: 38px;
+  }
+
+  .qr-section {
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--rand);
+  }
+
+  .game-board {
+    padding: 18px;
+  }
+
+  .phone-game {
+    padding: 22px 16px;
+  }
+
+  .game-header,
+  .phone-game-header {
+    align-items: flex-start;
+  }
+
+  .round-label {
+    padding: 9px 11px;
+    font-size: 11px;
+  }
+
+  .active-player-panel {
+    padding: 18px;
+  }
+
+  .game-code {
+    letter-spacing: 7px;
+  }
+
+  .player-item {
+    padding: 15px;
+    font-size: 16px;
+  }
+
+  .timeline-horizontal {
+    justify-content: flex-start;
+  }
+
+  .tablet-player-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* SMARTPHONE IM QUERFORMAT */
 
 @media (max-width: 900px) and (orientation: landscape) {
   body {
@@ -993,6 +949,10 @@ input::placeholder {
     margin-bottom: 10px;
   }
 
+  .phone-game-header h1 {
+    font-size: 28px;
+  }
+
   .phone-turn-status {
     margin-bottom: 10px;
     padding: 9px;
@@ -1001,6 +961,20 @@ input::placeholder {
   .phone-turn-panel {
     margin: 10px 0;
     padding: 12px;
+  }
+
+  .phone-turn-panel .new-game-card {
+    display: inline-flex;
+    width: 180px;
+    margin: 8px;
+    padding: 10px;
+  }
+
+  .phone-turn-panel .record-icon {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 4px;
+    font-size: 20px;
   }
 
   .phone-timeline-section {
@@ -1034,221 +1008,27 @@ input::placeholder {
     flex-basis: 110px;
     width: 110px;
   }
-  
-/* AUSGEWÄHLTE KARTENPOSITION AUF DEM TABLET */
-.tablet-timeline-slot {
-  flex: 0 0 42px;
-  min-height: 145px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px dashed #596078;
-  border-radius: 10px;
-  color: #aeb5c6;
-  font-size: 22px;
-  background: #202635;
-  opacity: 0.65;
-  transition: all 0.2s ease;
+
+  .tablet-timeline-slot {
+    flex: 0 0 42px;
+  }
+
+  .tablet-timeline-slot.selected {
+    flex: 0 0 205px;
+    width: 205px;
+    height: 145px;
+  }
 }
 
-.tablet-timeline-slot.selected {
-  flex-basis: 100px;
-  border: 2px solid #68d6a0;
-  background: #244536;
-  color: #68d6a0;
-  opacity: 1;
-  box-shadow: 0 0 18px #68d6a055;
-  font-size: 30px;
+/* HINWEIS IM HOCHFORMAT */
+
+@media (max-width: 900px) and (orientation: portrait) {
+  .phone-turn-panel::before {
+    content: "Tipp: Halte dein Smartphone quer für die Zeitleiste.";
+    display: block;
+    margin-bottom: 12px;
+    color: var(--akzent);
+    font-size: 13px;
+    font-weight: bold;
+  }
 }
-
-/* VERDECKTE DIGITALE HITSTER-KARTE */
-
-.tablet-timeline-slot {
-  box-sizing: border-box;
-  flex: 0 0 42px;
-  min-height: 145px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px dashed #596078;
-  border-radius: 10px;
-  color: #aeb5c6;
-  font-size: 22px;
-  background: #202635;
-  opacity: 0.65;
-  transition: all 0.25s ease;
-}
-
-.tablet-timeline-slot.selected {
-  flex: 0 0 205px;
-  min-height: 145px;
-  padding: 10px;
-  border: 1px solid #737b91;
-  border-radius: 13px;
-  background:
-    linear-gradient(145deg, #343b4b, #10131c 75%);
-  opacity: 1;
-  box-shadow: 0 5px 18px #0008;
-}
-
-.tablet-hidden-card {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  gap: 5px;
-}
-
-.tablet-card-brand {
-  color: #d9dce5;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 3px;
-}
-
-#tablet-card-qr {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 88px;
-  height: 88px;
-  padding: 3px;
-  background: white;
-  border-radius: 4px;
-}
-
-#tablet-card-qr img,
-#tablet-card-qr canvas {
-  display: block;
-  max-width: 82px;
-  max-height: 82px;
-}
-
-.tablet-card-label {
-  color: #aeb5c6;
-  font-size: 9px;
-  font-weight: bold;
-  letter-spacing: 2px;
-}
-  /* KARTENAUFBAU: INTERPRET OBEN, JAHR MITTIG, TITEL UNTEN */
-
-.timeline-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  text-align: center;
-  padding: 18px 12px 14px 12px;
-}
-
-.timeline-card .card-artist {
-  order: 1;
-  width: 100%;
-  margin-top: 0;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: bold;
-  line-height: 1.3;
-}
-
-.timeline-card strong {
-  order: 2;
-  margin: auto 0;
-  font-size: 27px;
-  line-height: 1.1;
-}
-
-.timeline-card .card-title {
-  order: 3;
-  width: 100%;
-  margin-top: 0;
-  color: #bfc6d5;
-  font-size: 12px;
-  line-height: 1.3;
-}
-
-/* Smartphone-Karten */
-.phone-timeline-card {
-  align-items: stretch;
-  text-align: center;
-  padding: 15px 10px 12px;
-}
-
-.phone-timeline-card > div {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  min-width: 0;
-  gap: 5px;
-}
-
-.phone-timeline-card .card-artist {
-  order: 1;
-  margin-top: 0;
-  width: 100%;
-}
-
-.phone-timeline-card .card-year {
-  order: 2;
-  margin: auto 0;
-}
-
-.phone-timeline-card .card-title {
-  order: 3;
-  width: 100%;
-  margin-top: 0;
-}
-  /* Verdeckte Karte: gleiche Größe wie die Timeline-Karten */
-.tablet-timeline-slot.selected {
-  box-sizing: border-box;
-  flex: 0 0 205px;
-  width: 205px;
-  min-height: 145px;
-  height: 145px;
-  padding: 10px;
-}
-
-/* Inhalt der verdeckten Karte */
-.tablet-hidden-card {
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  gap: 5px;
-}
-
-/* QR-Code mittig auf der Karte */
-#tablet-card-qr {
-  width: 82px;
-  height: 82px;
-  padding: 3px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  border-radius: 4px;
-}
-
-#tablet-card-qr img,
-#tablet-card-qr canvas {
-  display: block;
-  width: 82px;
-  height: 82px;
-  max-width: 82px;
-  max-height: 82px;
-}
-
-}
-
-
-
-
