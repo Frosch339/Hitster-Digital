@@ -670,9 +670,7 @@ ${showSlots ? `
       currentCard.position === index
         ? `
           <div class="tablet-hidden-card">
-            <span class="tablet-card-brand">HITSTER DIGITAL</span>
-            <div id="tablet-card-qr"></div>
-            <span class="tablet-card-label">VERDECKTE KARTE</span>
+          <div id="tablet-card-qr"></div>
           </div>
         `
         : "+"
@@ -697,11 +695,9 @@ const finalSlot = showSlots ? `
     ${
       currentCard.position === timeline.length
         ? `
-          <div class="tablet-hidden-card">
-            <span class="tablet-card-brand">HITSTER DIGITAL</span>
+            <div class="tablet-hidden-card">
             <div id="tablet-card-qr"></div>
-            <span class="tablet-card-label">VERDECKTE KARTE</span>
-          </div>
+            </div>
         `
         : "+"
     }
