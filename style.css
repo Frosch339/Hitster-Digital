@@ -755,6 +755,9 @@ input::placeholder {
 
 /* TABLET – VERDECKTE KARTE UND AUSGEWÄHLTE POSITION */
 
+
+/* TABLET – VERDECKTE HITSTER-KARTE */
+
 .tablet-timeline-slot {
   box-sizing: border-box;
   flex: 0 0 42px;
@@ -772,7 +775,7 @@ input::placeholder {
   transition: all 0.2s ease;
 }
 
-/* Ausgewählte Position: vollständige Kartenfläche */
+/* Ausgewählte Karte */
 
 .tablet-timeline-slot.selected {
   box-sizing: border-box;
@@ -781,62 +784,57 @@ input::placeholder {
   height: 145px;
   min-height: 145px;
   flex-shrink: 0;
-  padding: 10px;
-  border: 1px solid #737b91;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid #ffffff;
   border-radius: 13px;
-  background: linear-gradient(145deg, #343b4b, #10131c 75%);
+  background: linear-gradient(
+    135deg,
+    #f6c8d8,
+    #d8d0f5,
+    #bce7e5,
+    #f8e6b5
+  );
   opacity: 1;
   box-shadow: 0 5px 18px #0008;
 }
 
-/* Inhalt der verdeckten Karte */
+/* Vorderseite der Hitster-Karte */
 
 .tablet-hidden-card {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  min-height: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 5px;
+  justify-content: center;
+  padding: 12px;
 }
 
-.tablet-card-brand {
-  color: #d9dce5;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 3px;
-}
+/* Weißes QR-Code-Feld */
 
 #tablet-card-qr {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 82px;
-  height: 82px;
-  padding: 3px;
+  width: 102px;
+  height: 102px;
+  padding: 10px;
   box-sizing: border-box;
-  background: white;
-  border-radius: 4px;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 5px;
 }
 
 #tablet-card-qr img,
 #tablet-card-qr canvas {
   display: block;
-  width: 82px;
-  height: 82px;
+  width: 82px !important;
+  height: 82px !important;
   max-width: 82px;
   max-height: 82px;
 }
 
-.tablet-card-label {
-  color: #aeb5c6;
-  font-size: 9px;
-  font-weight: bold;
-  letter-spacing: 2px;
-}
 
 /* TABLET – SPIELZENTRALE */
 
