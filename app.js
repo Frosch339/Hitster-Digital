@@ -682,11 +682,11 @@ ${showSlots ? `
 
 
     <div class="timeline-card">
-      <span class="timeline-card-number">${index + 1}</span>
-      <strong>${song.year}</strong>
-      <span class="card-artist">${escapeHtml(song.artist)}</span>
-      <span class="card-title">${escapeHtml(song.title)}</span>
-    </div>
+  <span class="timeline-card-number">${index + 1}</span>
+  <span class="card-artist">${escapeHtml(song.artist)}</span>
+  <strong>${song.year}</strong>
+  <span class="card-title">${escapeHtml(song.title)}</span>
+</div>
   `).join("");
 
   
@@ -923,8 +923,8 @@ function renderTimelineCard(song, index) {
     <div class="phone-timeline-card">
       <span class="timeline-card-number">${index + 1}</span>
       <div>
-        <strong class="card-year">${song.year}</strong>
         <span class="card-artist">${escapeHtml(song.artist)}</span>
+        <strong class="card-year">${song.year}</strong>
         <span class="card-title">${escapeHtml(song.title)}</span>
       </div>
     </div>
