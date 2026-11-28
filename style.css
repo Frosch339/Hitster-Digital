@@ -1027,6 +1027,7 @@ input::placeholder {
   }
 }
 
+
 /* HINWEIS IM HOCHFORMAT */
 
 @media (max-width: 900px) and (orientation: portrait) {
@@ -1038,6 +1039,7 @@ input::placeholder {
     font-size: 13px;
     font-weight: bold;
   }
+}
   
 /* =========================================
    NEUES TABLET-SPIELBRETT
@@ -1400,3 +1402,4 @@ input::placeholder {
     height: 90px;
   }
 }
+
