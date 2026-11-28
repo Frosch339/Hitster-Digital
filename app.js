@@ -1058,6 +1058,7 @@ async function placeCardAt(position) {
 // KARTE AUFLÖSEN UND PRÜFEN
 // ==========================================
 
+
 async function resolveCard() {
   if (!currentPlayer || !currentLobby) return;
 
@@ -1081,14 +1082,23 @@ async function resolveCard() {
     const position = card.position;
     const year = Number(card.song.year);
 
-    const previousSong = position > 0 ? timeline[position - 1] : null;
-    const nextSong = position < timeline.length ? timeline[position] : null;
+    const previousSong = position > 0
+      ? timeline[position - 1]
+      : null;
 
-    const afterPrevious = !previousSong || year >= Number(previousSong.year);
-    const beforeNext = !nextSong || year <= Number(nextSong.year);
+    const nextSong = position < timeline.length
+      ? timeline[position]
+      : null;
+
+    const afterPrevious =
+      !previousSong || year >= Number(previousSong.year);
+
+    const beforeNext =
+      !nextSong || year <= Number(nextSong.year);
 
     const correct = afterPrevious && beforeNext;
 
+    // Richtige Karte in die Zeitleiste aufnehmen
     if (correct) {
       timeline.splice(position, 0, card.song);
       timelines[currentPlayer.id] = timeline;
@@ -1100,11 +1110,104 @@ async function resolveCard() {
       correct
     };
 
+    const gameState = {
+      ...(lobby.game_state || {})
+    };
+
+    const targetCards = Number(gameState.target_cards || 10);
+
+    // ------------------------------------------
+    // ERREICHT EIN SPIELER ALS ERSTER DIE ZIELZAHL?
+    // ------------------------------------------
+
+    if (
+      correct &&
+      gameState.phase === "normal" &&
+      timeline.length >= targetCards
+    ) {
+      const remainingPlayers = [];
+
+      // Nur Spieler NACH dem aktuellen Spieler berücksichtigen.
+      // Kein Zurückspringen zum Anfang der Spielerliste!
+      for (let i = playerIndex + 1; i < players.length; i++) {
+        remainingPlayers.push(players[i].id);
+      }
+
+      gameState.first_target_player = currentPlayer.id;
+
+      // ------------------------------------------
+      // FALL 1: ES KOMMEN NOCH SPIELER
+      // ------------------------------------------
+
+      if (remainingPlayers.length > 0) {
+        gameState.phase = "finishing";
+        gameState.finishing_players = remainingPlayers;
+        gameState.tiebreak_players = [];
+        gameState.tiebreak_round = 0;
+
+        const { error } = await db
+          .from("game_lobbies")
+          .update({
+            timelines,
+            current_card: updatedCard,
+            game_state: gameState
+          })
+          .eq("code", lobby.code);
+
+        if (error) throw error;
+
+        return;
+      }
+
+      // ------------------------------------------
+      // FALL 2: AKTUELLER SPIELER IST DER LETZTE
+      // ------------------------------------------
+
+      const ranking = players
+        .map(player => ({
+          player_id: player.id,
+          name: player.name,
+          cards: (timelines[player.id] || []).length
+        }))
+        .sort((a, b) => b.cards - a.cards);
+
+      const highestScore = ranking[0]?.cards || 0;
+
+      const winners = ranking
+        .filter(player => player.cards === highestScore)
+        .map(player => player.player_id);
+
+      gameState.phase = "finished";
+      gameState.ranking = ranking;
+      gameState.winners = winners;
+      gameState.finishing_players = [];
+      gameState.tiebreak_players = [];
+
+      const { error } = await db
+        .from("game_lobbies")
+        .update({
+          timelines,
+          current_card: null,
+          status: "finished",
+          game_state: gameState
+        })
+        .eq("code", lobby.code);
+
+      if (error) throw error;
+
+      return;
+    }
+
+    // ------------------------------------------
+    // NORMALE AUFLÖSUNG
+    // ------------------------------------------
+
     const { error } = await db
       .from("game_lobbies")
       .update({
         timelines,
-        current_card: updatedCard
+        current_card: updatedCard,
+        game_state: gameState
       })
       .eq("code", lobby.code);
 
@@ -1121,6 +1224,7 @@ async function resolveCard() {
 // NÄCHSTER SPIELER
 // ==========================================
 
+
 async function nextTurn() {
   if (!currentPlayer || !currentPlayer.isHost || !currentLobby) return;
 
@@ -1135,35 +1239,189 @@ async function nextTurn() {
     const lobby = await loadLobby(currentLobby.code);
     const players = lobby.players || [];
     const deck = [...(lobby.game_deck || [])];
+    const timelines = lobby.timelines || {};
+    const gameState = { ...(lobby.game_state || {}) };
 
     if (!lobby.current_card || !lobby.current_card.revealed) {
       throw new Error("Die aktuelle Karte muss zuerst aufgelöst werden.");
     }
 
-    if (!deck.length) {
+    const oldIndex = lobby.current_player_index || 0;
+    const currentPlayerId = players[oldIndex]?.id;
+
+    // Rangliste erstellen
+    function getRanking() {
+      return players
+        .map(player => ({
+          player_id: player.id,
+          name: player.name,
+          cards: (timelines[player.id] || []).length
+        }))
+        .sort((a, b) => b.cards - a.cards);
+    }
+
+    // Spiel beenden
+    async function finishGame() {
+      const ranking = getRanking();
+      const highestScore = ranking[0]?.cards || 0;
+
+      const winners = ranking
+        .filter(player => player.cards === highestScore)
+        .map(player => player.player_id);
+
+      gameState.phase = "finished";
+      gameState.ranking = ranking;
+      gameState.winners = winners;
+      gameState.finishing_players = [];
+      gameState.tiebreak_players = [];
+
       const { error } = await db
         .from("game_lobbies")
         .update({
           status: "finished",
-          current_card: null
+          current_card: null,
+          game_state: gameState
         })
         .eq("code", lobby.code);
 
       if (error) throw error;
+    }
+
+    // Spieler in Zugreihenfolge sortieren
+    function orderPlayersAfter(index, eligibleIds) {
+      const ordered = [];
+
+      for (let i = 1; i <= players.length; i++) {
+        const player = players[(index + i) % players.length];
+
+        if (player && eligibleIds.includes(player.id)) {
+          ordered.push(player.id);
+        }
+      }
+
+      return ordered;
+    }
+
+    let nextPlayerId = null;
+    let newRound = lobby.round_number || 1;
+
+    // ------------------------------------------
+    // NORMALE SPIELRUNDE
+    // ------------------------------------------
+
+    if (gameState.phase === "normal" || !gameState.phase) {
+      const nextIndex = (oldIndex + 1) % players.length;
+
+      nextPlayerId = players[nextIndex]?.id;
+
+      if (nextIndex === 0) {
+        newRound++;
+      }
+    }
+
+    // ------------------------------------------
+    // LETZTE REGULÄRE RUNDE
+    // ------------------------------------------
+
+    else if (gameState.phase === "finishing") {
+      const remainingPlayers = (
+        gameState.finishing_players || []
+      ).filter(id => id !== currentPlayerId);
+
+      gameState.finishing_players = remainingPlayers;
+
+      if (remainingPlayers.length > 0) {
+        nextPlayerId = remainingPlayers[0];
+      } else {
+        const ranking = getRanking();
+        const highestScore = ranking[0]?.cards || 0;
+
+        const leaders = ranking
+          .filter(player => player.cards === highestScore)
+          .map(player => player.player_id);
+
+        // Eindeutiger Sieger
+        if (leaders.length <= 1) {
+          await finishGame();
+          return;
+        }
+
+        // Gleichstand: Stechrunde starten
+        gameState.phase = "tiebreak";
+        gameState.tiebreak_round = 1;
+
+        gameState.tiebreak_players =
+          orderPlayersAfter(oldIndex, leaders);
+
+        nextPlayerId = gameState.tiebreak_players[0];
+      }
+    }
+
+    // ------------------------------------------
+    // STECHRUNDEN
+    // ------------------------------------------
+
+    else if (gameState.phase === "tiebreak") {
+      const remainingPlayers = (
+        gameState.tiebreak_players || []
+      ).filter(id => id !== currentPlayerId);
+
+      gameState.tiebreak_players = remainingPlayers;
+
+      if (remainingPlayers.length > 0) {
+        nextPlayerId = remainingPlayers[0];
+      } else {
+        const ranking = getRanking();
+        const highestScore = ranking[0]?.cards || 0;
+
+        const leaders = ranking
+          .filter(player => player.cards === highestScore)
+          .map(player => player.player_id);
+
+        // Gleichstand aufgelöst
+        if (leaders.length <= 1) {
+          await finishGame();
+          return;
+        }
+
+        // Gleichstand besteht: nächste Stechrunde
+        gameState.tiebreak_round =
+          (gameState.tiebreak_round || 1) + 1;
+
+        gameState.tiebreak_players =
+          orderPlayersAfter(oldIndex, leaders);
+
+        nextPlayerId = gameState.tiebreak_players[0];
+      }
+    }
+
+    // ------------------------------------------
+    // NÄCHSTEN SPIELZUG VORBEREITEN
+    // ------------------------------------------
+
+    if (!nextPlayerId) {
+      await finishGame();
       return;
     }
 
-    const oldIndex = lobby.current_player_index || 0;
-    const nextIndex = (oldIndex + 1) % players.length;
-    const newRound = nextIndex === 0
-      ? (lobby.round_number || 1) + 1
-      : (lobby.round_number || 1);
+    if (!deck.length) {
+      await finishGame();
+      return;
+    }
+
+    const nextIndex = players.findIndex(
+      player => player.id === nextPlayerId
+    );
+
+    if (nextIndex === -1) {
+      throw new Error("Der nächste Spieler wurde nicht gefunden.");
+    }
 
     const nextCard = deck.pop();
 
     const currentCard = {
       song: nextCard,
-      player_id: players[nextIndex].id,
+      player_id: nextPlayerId,
       position: null,
       revealed: false,
       correct: null
@@ -1175,7 +1433,8 @@ async function nextTurn() {
         current_player_index: nextIndex,
         round_number: newRound,
         game_deck: deck,
-        current_card: currentCard
+        current_card: currentCard,
+        game_state: gameState
       })
       .eq("code", lobby.code);
 
@@ -1191,6 +1450,7 @@ async function nextTurn() {
     }
   }
 }
+
 
 
 // ==========================================
