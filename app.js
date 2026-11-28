@@ -601,6 +601,7 @@ async function showTabletGameScreen(code) {
 
 
 
+
 function renderTabletGame() {
   const lobby = currentLobby;
   if (!lobby) return;
@@ -610,153 +611,165 @@ function renderTabletGame() {
   const playerIndex = lobby.current_player_index || 0;
   const activePlayer = players[playerIndex];
   const currentCard = lobby.current_card;
+  const remainingCards = (lobby.game_deck || []).length;
 
   if (lobby.status === "finished") {
     app.innerHTML = `
-      <div class="game-board">
-        <p class="untertitel">HITSTER DIGITAL</p>
-        <h1>Spiel beendet!</h1>
-        <div class="waiting-box">
-          <h2>Alle Karten wurden gespielt.</h2>
-          <p>Vielen Dank fürs Mitspielen!</p>
+      <div class="arena-screen">
+        <div class="arena-finished">
+          <h1>Spiel beendet!</h1>
+          <p>Vielen Dank fürs Mitspielen.</p>
         </div>
       </div>
     `;
     return;
   }
 
-  if (!activePlayer) return;
+  if (!activePlayer || players.length === 0) return;
 
-  const timeline = timelines[activePlayer.id] || [];
+  // Aktiven Spieler an den unteren Bildschirmrand setzen.
+  const orderedPlayers = [
+    ...players.slice(playerIndex),
+    ...players.slice(0, playerIndex)
+  ];
 
-  let resultHtml = "";
+  const seatCount = orderedPlayers.length;
 
-  if (currentCard && currentCard.revealed) {
-    resultHtml = `
-      <div class="reveal-panel ${currentCard.correct ? "correct" : "incorrect"}">
-        <p class="untertitel">AUFGELÖST</p>
-        <h2>${escapeHtml(currentCard.song.title)}</h2>
-        <p>${escapeHtml(currentCard.song.artist)}</p>
-        <div class="reveal-year">${currentCard.song.year}</div>
-        <strong>
-          ${currentCard.correct ? "Richtig eingeordnet!" : "Leider falsch eingeordnet"}
-        </strong>
-      </div>
+  // Karten einer Zeitleiste erzeugen.
+  function createTimelineHtml(player, isActive) {
+    const timeline = timelines[player.id] || [];
+
+    const showSlot = isActive && currentCard && !currentCard.revealed;
+    const rawPosition = Number.isInteger(currentCard?.position)
+      ? currentCard.position
+      : timeline.length;
+
+    const slotPosition = Math.max(
+      0,
+      Math.min(rawPosition, timeline.length)
+    );
+
+    let html = "";
+
+    timeline.forEach((song, index) => {
+      if (showSlot && slotPosition === index) {
+        html += `<div class="arena-card-slot">?</div>`;
+      }
+
+      const colorNumber = Math.abs(Number(song.id) || index) % 5;
+
+      html += `
+        <div class="arena-song-card card-color-${colorNumber}">
+          <span class="arena-card-artist">${escapeHtml(song.artist || "")}</span>
+          <strong class="arena-card-year">${song.year || ""}</strong>
+          <span class="arena-card-title">${escapeHtml(song.title || "")}</span>
+        </div>
+      `;
+    });
+
+    if (showSlot && slotPosition === timeline.length) {
+      html += `<div class="arena-card-slot">?</div>`;
+    }
+
+    return html;
+  }
+
+  // Alle Spieler gleichmäßig um die Mitte verteilen.
+  const playerHtml = orderedPlayers.map((player, index) => {
+    const isActive = player.id === activePlayer.id;
+
+    // 90 Grad = unten. Der aktive Spieler bleibt immer dort.
+    const angle = 90 + (index * 360 / seatCount);
+    const radians = angle * Math.PI / 180;
+
+    const radiusX = seatCount <= 4 ? 35 : 37;
+    const radiusY = seatCount <= 4 ? 32 : 34;
+
+    const x = 50 + Math.cos(radians) * radiusX;
+    const y = 50 + Math.sin(radians) * radiusY;
+
+    // Karten zur jeweiligen Spielerposition ausrichten.
+    const rotation = angle - 90;
+
+    const timeline = timelines[player.id] || [];
+
+    return `
+      <section
+        class="arena-player ${isActive ? "arena-player--active" : ""}"
+        style="
+          left: ${x}%;
+          top: ${y}%;
+          --seat-rotation: ${rotation}deg;
+        "
+      >
+        <div class="arena-player-content">
+          <div class="arena-player-name">
+            ${escapeHtml(player.name || "Spieler")}
+            ${isActive ? `<span class="arena-active-label">AM ZUG</span>` : ""}
+          </div>
+
+          <div class="arena-player-cards">
+            ${createTimelineHtml(player, isActive)}
+          </div>
+
+          <div class="arena-card-count">
+            ${timeline.length} Karten
+          </div>
+        </div>
+      </section>
     `;
-  } else {
-    resultHtml = `
-      <div class="tablet-current-card">
-        <div class="record-icon">♫</div>
-        <h2>Neue Karte</h2>
-        <p>Die Karte wird gerade eingeordnet.</p>
-        ${
-          currentCard && currentCard.position !== null
-            ? '<span class="placed-label">Position ausgewählt</span>'
-            : '<span class="placed-label">Warte auf die Platzierung ...</span>'
-        }
+  }).join("");
+
+  // Anzeige der aktuellen Karte in der Mitte.
+  let centerContent = `
+    <div class="arena-deck">
+      <div class="arena-deck-card arena-deck-card--back">
+        <span>HITSTER</span>
+      </div>
+      <div class="arena-deck-count">${remainingCards}</div>
+    </div>
+    <div class="arena-center-caption">Nächste Karte</div>
+  `;
+
+  if (currentCard && currentCard.revealed && currentCard.song) {
+    const song = currentCard.song;
+
+    centerContent = `
+      <div class="arena-revealed-card">
+        <span class="arena-revealed-label">AUFGELÖST</span>
+        <strong>${escapeHtml(song.title || "")}</strong>
+        <span>${escapeHtml(song.artist || "")}</span>
+        <b>${song.year || ""}</b>
       </div>
     `;
   }
-
-  const showSlots = currentCard && !currentCard.revealed;
-
-  const timelineHtml = timeline.map((song, index) => `
-    
-${showSlots ? `
-  <div class="tablet-timeline-slot ${
-    currentCard.position === index ? "selected" : ""
-  }">
-    ${
-      currentCard.position === index
-        ? `
-          <div class="tablet-hidden-card">
-          <div id="tablet-card-qr"></div>
-          </div>
-        `
-        : "+"
-    }
-  </div>
-` : ""}
-
-
-   <div class="timeline-card card-color-${song.id % 5}">
-  <span class="timeline-card-number">${song.id}</span>
-  <span class="card-artist">${escapeHtml(song.artist)}</span>
-  <strong>${song.year}</strong>
-  <span class="card-title">${escapeHtml(song.title)}</span>
-</div>
-  `).join("");
-
-  
-const finalSlot = showSlots ? `
-  <div class="tablet-timeline-slot ${
-    currentCard.position === timeline.length ? "selected" : ""
-  }">
-    ${
-      currentCard.position === timeline.length
-        ? `
-            <div class="tablet-hidden-card">
-            <div id="tablet-card-qr"></div>
-            </div>
-        `
-        : "+"
-    }
-  </div>
-` : "";
-
 
   app.innerHTML = `
-    <div class="game-board tablet-board">
-      <header class="game-header">
-        <div>
-          <p class="untertitel">HITSTER DIGITAL</p>
-          <h1>Spielrunde</h1>
+    <main class="arena-screen">
+      <header class="arena-header">
+        <div class="arena-logo">HITSTER DIGITAL</div>
+        <div class="arena-round">
+          RUNDE ${lobby.round_number || 1}
         </div>
-        <div class="round-label">RUNDE ${lobby.round_number || 1}</div>
+        <div class="arena-game-code">
+          SPIELCODE ${escapeHtml(lobby.code || "")}
+        </div>
       </header>
 
-      <section class="tablet-player-list">
-        ${players.map((player, index) => `
-          <div class="tablet-player ${index === playerIndex ? "active" : ""}">
-            <span>${escapeHtml(player.name)}</span>
-            <strong>${(timelines[player.id] || []).length} Karten</strong>
-          </div>
-        `).join("")}
-      </section>
+      <div class="arena-board">
+        ${playerHtml}
 
-      <section class="active-player-panel">
-        <p class="untertitel">JETZT AM ZUG</p>
-        <h2>${escapeHtml(activePlayer.name)}</h2>
-        <p>Spieler ${playerIndex + 1} von ${players.length}</p>
-      </section>
-
-      ${resultHtml}
-
-      <section class="tablet-timeline-section">
-        <div class="section-heading">
-          <h2>Zeitleiste von ${escapeHtml(activePlayer.name)}</h2>
-          <span>${timeline.length} Karten</span>
+        <div class="arena-center">
+          ${centerContent}
         </div>
+      </div>
 
-        <div class="timeline-horizontal">
-          ${timelineHtml}
-          ${finalSlot}
-        </div>
-      </section>
-    </div>
+      <footer class="arena-footer">
+        <span>Am Zug: <strong>${escapeHtml(activePlayer.name || "")}</strong></span>
+        <span>${players.length} Spieler</span>
+      </footer>
+    </main>
   `;
-  
-    const qrContainer = document.getElementById("tablet-card-qr");
-
-  if (qrContainer && typeof QRCode !== "undefined") {
-    new QRCode(qrContainer, {
-      text: `HITSTER-DIGITAL-${lobby.code}-${lobby.round_number}`,
-      width: 82,
-      height: 82,
-      colorDark: "#111111",
-      colorLight: "#ffffff"
-    });
-  }
 }
 
 
