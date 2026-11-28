@@ -1038,4 +1038,365 @@ input::placeholder {
     font-size: 13px;
     font-weight: bold;
   }
+  
+/* =========================================
+   NEUES TABLET-SPIELBRETT
+   ========================================= */
+
+.arena-screen {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(91, 112, 220, 0.55), transparent 48%),
+    linear-gradient(135deg, #171b55 0%, #3436a0 45%, #171b55 100%);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 14px 22px;
+}
+
+.arena-header,
+.arena-footer {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.arena-header {
+  min-height: 38px;
+}
+
+.arena-logo {
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.arena-round,
+.arena-game-code {
+  color: rgba(255,255,255,0.8);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.arena-board {
+  position: relative;
+  flex: 1;
+  min-height: 560px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.arena-player {
+  position: absolute;
+  z-index: 2;
+  width: 30%;
+  max-width: 330px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.arena-player-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transform: rotate(var(--seat-rotation));
+  transform-origin: center center;
+}
+
+.arena-player--active {
+  z-index: 4;
+  width: 36%;
+  max-width: 390px;
+}
+
+.arena-player-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-height: 25px;
+  font-size: 14px;
+  font-weight: 900;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.4);
+}
+
+.arena-player--active .arena-player-name {
+  font-size: 17px;
+}
+
+.arena-active-label {
+  padding: 3px 7px;
+  border-radius: 20px;
+  background: #c8ff55;
+  color: #202b12;
+  font-size: 9px;
+  letter-spacing: 0.7px;
+}
+
+.arena-player-cards {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 5px 3px;
+  scrollbar-width: none;
+}
+
+.arena-player-cards::-webkit-scrollbar {
+  display: none;
+}
+
+.arena-song-card,
+.arena-card-slot {
+  flex: 0 0 57px;
+  width: 57px;
+  height: 82px;
+  box-sizing: border-box;
+  border: 2px solid rgba(255,255,255,0.85);
+  border-radius: 7px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.arena-song-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 3px;
+  color: #171923;
+  text-align: center;
+  overflow: hidden;
+}
+
+.arena-card-artist,
+.arena-card-title {
+  width: 100%;
+  font-size: 7px;
+  line-height: 1.15;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.arena-card-year {
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.arena-card-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #d9ff85;
+  background: rgba(200,255,85,0.18);
+  color: #e4ffad;
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.arena-card-count {
+  color: rgba(255,255,255,0.72);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.arena-player--active .arena-song-card,
+.arena-player--active .arena-card-slot {
+  flex-basis: 66px;
+  width: 66px;
+  height: 94px;
+}
+
+.arena-player--active .arena-card-artist,
+.arena-player--active .arena-card-title {
+  font-size: 8px;
+}
+
+.arena-player--active .arena-card-year {
+  font-size: 19px;
+}
+
+/* Zentrale Kartenablage */
+
+.arena-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.arena-deck {
+  position: relative;
+  width: 82px;
+  height: 112px;
+}
+
+.arena-deck-card {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(255,255,255,0.9);
+  border-radius: 10px;
+  box-shadow: 0 7px 18px rgba(0,0,0,0.35);
+}
+
+.arena-deck-card--back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #f2c94c 0 7px,
+      #ed6557 7px 14px,
+      #4fc4bd 14px 21px,
+      #7866d8 21px 28px
+    );
+  transform: rotate(-5deg);
+}
+
+.arena-deck-card--back span {
+  padding: 5px 3px;
+  border-radius: 5px;
+  background: #fff;
+  color: #25234d;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.5px;
+}
+
+.arena-deck-count {
+  position: absolute;
+  right: -12px;
+  bottom: -10px;
+  min-width: 25px;
+  height: 25px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #c8ff55;
+  color: #202b12;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.arena-center-caption {
+  color: rgba(255,255,255,0.85);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.arena-revealed-card {
+  width: 170px;
+  min-height: 125px;
+  padding: 13px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px solid rgba(255,255,255,0.85);
+  border-radius: 12px;
+  background: #f5d96b;
+  color: #24233c;
+  text-align: center;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+}
+
+.arena-revealed-label {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.arena-revealed-card strong {
+  font-size: 14px;
+}
+
+.arena-revealed-card span:not(.arena-revealed-label) {
+  font-size: 11px;
+}
+
+.arena-revealed-card b {
+  font-size: 22px;
+}
+
+.arena-footer {
+  min-height: 25px;
+  color: rgba(255,255,255,0.8);
+  font-size: 11px;
+}
+
+.arena-footer strong {
+  color: #d7ff83;
+}
+
+.arena-finished {
+  margin: auto;
+  text-align: center;
+}
+
+/* Tablet und kleinere Displays */
+
+@media (max-width: 900px) {
+  .arena-screen {
+    padding: 10px;
+  }
+
+  .arena-board {
+    min-height: 520px;
+  }
+
+  .arena-player {
+    width: 34%;
+  }
+
+  .arena-player--active {
+    width: 40%;
+  }
+
+  .arena-song-card,
+  .arena-card-slot {
+    flex-basis: 48px;
+    width: 48px;
+    height: 70px;
+  }
+
+  .arena-player--active .arena-song-card,
+  .arena-player--active .arena-card-slot {
+    flex-basis: 54px;
+    width: 54px;
+    height: 78px;
+  }
+
+  .arena-deck {
+    width: 65px;
+    height: 90px;
+  }
 }
