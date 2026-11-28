@@ -679,7 +679,7 @@ ${showSlots ? `
 ` : ""}
 
 
-    <div class="timeline-card">
+    <div class="timeline-card card-color-${index % 5}">
   <span class="timeline-card-number">${index + 1}</span>
   <span class="card-artist">${escapeHtml(song.artist)}</span>
   <strong>${song.year}</strong>
