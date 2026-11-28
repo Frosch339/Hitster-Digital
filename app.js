@@ -454,6 +454,7 @@ async function joinGame(code) {
 // SMARTPHONE – LOBBY
 // ==========================================
 
+
 function showJoinedPage(code) {
   stopRealtime();
   currentView = "phone-lobby";
@@ -475,6 +476,16 @@ function showJoinedPage(code) {
             <h2>Du bist Spieler 1</h2>
             <p>Du bist der Spielleiter und kannst die Runde starten.</p>
           </div>
+
+          <label for="target-cards">Karten zum Sieg</label>
+
+          <select id="target-cards">
+            <option value="5">5 Karten</option>
+            <option value="10" selected>10 Karten</option>
+            <option value="15">15 Karten</option>
+            <option value="20">20 Karten</option>
+          </select>
+
           <button id="start-game">Spiel starten</button>
         `
         : `
@@ -492,7 +503,13 @@ function showJoinedPage(code) {
 
   if (isHost) {
     document.querySelector("#start-game")
-      .addEventListener("click", () => startGame(code));
+      .addEventListener("click", () => {
+        const target = Number(
+          document.querySelector("#target-cards").value
+        );
+
+        startGame(code, target);
+      });
   }
 
   document.querySelector("#leave-game")
@@ -502,11 +519,13 @@ function showJoinedPage(code) {
 }
 
 
+
 // ==========================================
 // SPIELSTART – KARTENSTAPEL ERSTELLEN
 // ==========================================
 
-async function startGame(code) {
+
+async function startGame(code, targetCards = 10) {
   if (!currentPlayer || !currentPlayer.isHost) return;
 
   const button = document.querySelector("#start-game");
@@ -526,6 +545,10 @@ async function startGame(code) {
 
     if (!Array.isArray(window.songs) || window.songs.length < players.length + 1) {
       throw new Error("Die Songliste konnte nicht richtig geladen werden.");
+    }
+
+    if (![5, 10, 15, 20].includes(targetCards)) {
+      throw new Error("Ungültige Zielanzahl.");
     }
 
     // Songs mischen
@@ -557,7 +580,17 @@ async function startGame(code) {
         timelines,
         current_card: currentCard,
         game_deck: deck,
-        round_number: 1
+        round_number: 1,
+
+        // Neue Spieleinstellungen
+        game_state: {
+          target_cards: targetCards,
+          phase: "normal",
+          finishing_players: [],
+          tiebreak_players: [],
+          tiebreak_round: 0,
+          first_target_player: null
+        }
       })
       .eq("code", code);
 
@@ -573,6 +606,7 @@ async function startGame(code) {
     }
   }
 }
+
 
 
 // ==========================================
